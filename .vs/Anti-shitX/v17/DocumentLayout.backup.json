@@ -1,0 +1,491 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\services\\apiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\services\\apiservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\services\\screenshotservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\services\\screenshotservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\detectionengine\\processmonitor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\detectionengine\\processmonitor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\ui\\windows\\mainoverlay.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\ui\\windows\\mainoverlay.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\services\\monitorservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\services\\monitorservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\app.xaml.cs||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\app.xaml.cs||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\detectionengine\\devicemonitor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\detectionengine\\devicemonitor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\devicechangedeventargs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\devicechangedeventargs.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\packages.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\packages.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\ui\\resources\\styles.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\ui\\resources\\styles.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\serviceinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\serviceinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\driverinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\driverinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\networkconnection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\networkconnection.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\monitordata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\monitordata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\processinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\processinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\hardwareinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\hardwareinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\systeminfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\systeminfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\ui\\windows\\loginwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\ui\\windows\\loginwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\ui\\windows\\loginwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\ui\\windows\\loginwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\deviceinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\deviceinfo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\models\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\models\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\config\\constants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\config\\constants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\core\\config\\appsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\core\\config\\appsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|c:\\users\\discord\\source\\repos\\anti-shitx\\anti-shitx\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{3B5AF2B5-85E3-4E41-B13F-F683C06E5B43}|Anti-shitX\\Anti-shitX.csproj|solutionrelative:anti-shitx\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ProcessMonitor.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\DetectionEngine\\ProcessMonitor.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\DetectionEngine\\ProcessMonitor.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\DetectionEngine\\ProcessMonitor.cs",
+              "RelativeToolTip": "Anti-shitX\\DetectionEngine\\ProcessMonitor.cs",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAuwJkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:58:37.639Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ScreenshotService.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Services\\ScreenshotService.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Services\\ScreenshotService.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Services\\ScreenshotService.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Services\\ScreenshotService.cs",
+              "ViewState": "AgIAAF8AAAAAAAAAAAAuwJMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:50:13.137Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\MainWindow.xaml.cs",
+              "RelativeToolTip": "Anti-shitX\\MainWindow.xaml.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:39:23.01Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "MainOverlay.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Windows\\MainOverlay.xaml.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\UI\\Windows\\MainOverlay.xaml.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Windows\\MainOverlay.xaml.cs",
+              "RelativeToolTip": "Anti-shitX\\UI\\Windows\\MainOverlay.xaml.cs",
+              "ViewState": "AgIAAPcAAAAAAAAAAIAwwBABAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:53:22.123Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "App.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\App.xaml.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\App.xaml.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\App.xaml.cs",
+              "RelativeToolTip": "Anti-shitX\\App.xaml.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAuwDwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:39:30.308Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "MonitorService.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Services\\MonitorService.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Services\\MonitorService.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Services\\MonitorService.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Services\\MonitorService.cs",
+              "ViewState": "AgIAAEQCAAAAAAAAAAAuwHgCAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:59:04.058Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "ApiService.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Services\\ApiService.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Services\\ApiService.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Services\\ApiService.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Services\\ApiService.cs",
+              "ViewState": "AgIAAJAAAAAAAAAAAAAuwK4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:49:57.147Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DeviceMonitor.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\DetectionEngine\\DeviceMonitor.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\DetectionEngine\\DeviceMonitor.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\DetectionEngine\\DeviceMonitor.cs",
+              "RelativeToolTip": "Anti-shitX\\DetectionEngine\\DeviceMonitor.cs",
+              "ViewState": "AgIAAAsBAAAAAAAAAAAuwD8BAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:58:21.383Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "DeviceChangedEventArgs.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\DeviceChangedEventArgs.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\DeviceChangedEventArgs.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\DeviceChangedEventArgs.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\DeviceChangedEventArgs.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:59:43.178Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Packages.config",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Packages.config",
+              "RelativeDocumentMoniker": "Anti-shitX\\Packages.config",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Packages.config",
+              "RelativeToolTip": "Anti-shitX\\Packages.config",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAALAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
+              "WhenOpened": "2025-03-29T17:02:12.842Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "App.config",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\App.config",
+              "RelativeDocumentMoniker": "Anti-shitX\\App.config",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\App.config",
+              "RelativeToolTip": "Anti-shitX\\App.config",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
+              "WhenOpened": "2025-03-29T17:01:36.184Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Styles.xaml",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Resources\\Styles.xaml",
+              "RelativeDocumentMoniker": "Anti-shitX\\UI\\Resources\\Styles.xaml",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Resources\\Styles.xaml",
+              "RelativeToolTip": "Anti-shitX\\UI\\Resources\\Styles.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-03-29T17:00:02.728Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "ServiceInfo.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\ServiceInfo.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\ServiceInfo.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\ServiceInfo.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\ServiceInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:57:15.187Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "DriverInfo.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\DriverInfo.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\DriverInfo.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\DriverInfo.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\DriverInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:56:44.568Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "NetworkConnection.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\NetworkConnection.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\NetworkConnection.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\NetworkConnection.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\NetworkConnection.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:56:02.484Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "ProcessInfo.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\ProcessInfo.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\ProcessInfo.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\ProcessInfo.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\ProcessInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:55:26.623Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "HardwareInfo.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\HardwareInfo.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\HardwareInfo.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\HardwareInfo.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\HardwareInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:54:53.77Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "SystemInfo.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\SystemInfo.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\SystemInfo.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\SystemInfo.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\SystemInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:54:39.372Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "LoginWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Windows\\LoginWindow.xaml.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\UI\\Windows\\LoginWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Windows\\LoginWindow.xaml.cs",
+              "RelativeToolTip": "Anti-shitX\\UI\\Windows\\LoginWindow.xaml.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAuwFEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:51:52.793Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "MonitorData.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\MonitorData.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\MonitorData.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\MonitorData.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\MonitorData.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:43:17.255Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "LoginWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Windows\\LoginWindow.xaml",
+              "RelativeDocumentMoniker": "Anti-shitX\\UI\\Windows\\LoginWindow.xaml",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\UI\\Windows\\LoginWindow.xaml",
+              "RelativeToolTip": "Anti-shitX\\UI\\Windows\\LoginWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-03-29T16:51:10.905Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "DeviceInfo.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\DeviceInfo.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\DeviceInfo.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\DeviceInfo.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\DeviceInfo.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:43:28.55Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "Player.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\Player.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Models\\Player.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Models\\Player.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Models\\Player.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:41:42.622Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "Constants.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Config\\Constants.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Config\\Constants.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Config\\Constants.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Config\\Constants.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:41:28.387Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "AppSettings.cs",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Config\\AppSettings.cs",
+              "RelativeDocumentMoniker": "Anti-shitX\\Core\\Config\\AppSettings.cs",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\Core\\Config\\AppSettings.cs",
+              "RelativeToolTip": "Anti-shitX\\Core\\Config\\AppSettings.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-29T16:40:51.111Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "App.xaml",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\App.xaml",
+              "RelativeDocumentMoniker": "Anti-shitX\\App.xaml",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\App.xaml",
+              "RelativeToolTip": "Anti-shitX\\App.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-03-29T16:39:51.918Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "Anti-shitX\\MainWindow.xaml",
+              "ToolTip": "C:\\Users\\DISCORD\\source\\repos\\Anti-shitX\\Anti-shitX\\MainWindow.xaml",
+              "RelativeToolTip": "Anti-shitX\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-03-29T16:39:23.324Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:2:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
