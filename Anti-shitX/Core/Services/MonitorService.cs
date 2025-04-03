@@ -52,6 +52,19 @@ namespace AntiCheatClient.Core.Services
                 // Obtener hora de inicio del PC
                 string pcStartTime = GetLastBootTime();
 
+                // Recopilar información del sistema y hardware
+                SystemInfo systemInfo = GetSystemInfo();
+                HardwareInfo hardwareInfo = GetHardwareInfo();
+
+                // Recopilar información de dispositivos USB
+                List<DeviceInfo> usbDevices = GetConnectedDevices();
+
+                // Recopilar conexiones de red
+                List<NetworkConnection> networkConnections = GetNetworkConnections();
+
+                // Recopilar drivers cargados
+                List<DriverInfo> loadedDrivers = GetLoadedDrivers();
+
                 // Recopilar información del sistema
                 MonitorData monitorData = new MonitorData
                 {
@@ -66,18 +79,22 @@ namespace AntiCheatClient.Core.Services
                     IsGameRunning = isGameRunning,
 
                     // Información de dispositivos
-                    UsbDevices = GetConnectedDevices(),
+                    UsbDevices = usbDevices,
 
                     // Información del sistema y hardware
-                    SystemInfo = GetSystemInfo(),
-                    HardwareInfo = GetHardwareInfo(),
+                    SystemInfo = systemInfo,
+                    HardwareInfo = hardwareInfo,
 
                     // Conexiones de red
-                    NetworkConnections = GetNetworkConnections(),
+                    NetworkConnections = networkConnections,
 
                     // Drivers cargados
-                    LoadedDrivers = GetLoadedDrivers()
+                    LoadedDrivers = loadedDrivers
                 };
+
+                // Debuggear datos enviados
+                Console.WriteLine($"Enviando systemInfo: {JsonConvert.SerializeObject(systemInfo)}");
+                Console.WriteLine($"Enviando hardwareInfo: {JsonConvert.SerializeObject(hardwareInfo)}");
 
                 // Enviar datos al servidor
                 bool monitorResult = await _apiService.SendMonitorData(monitorData);
@@ -226,6 +243,7 @@ namespace AntiCheatClient.Core.Services
                     foreach (ManagementObject gpu in gpuSearcher.Get())
                     {
                         hardwareInfo.Gpu = gpu["Name"]?.ToString() ?? "Unknown GPU";
+                        hardwareInfo.GpuDriverVersion = gpu["DriverVersion"]?.ToString() ?? "Unknown";
                         break; // Solo tomamos el primero
                     }
                 }
@@ -306,6 +324,9 @@ namespace AntiCheatClient.Core.Services
                     }
                     hardwareInfo.NetworkAdapters = string.Join(", ", adapters);
                 }
+
+                // Generar un ID de hardware único
+                hardwareInfo.HardwareId = GenerateHardwareId(hardwareInfo);
             }
             catch (Exception ex)
             {
@@ -313,6 +334,18 @@ namespace AntiCheatClient.Core.Services
             }
 
             return hardwareInfo;
+        }
+
+        private string GenerateHardwareId(HardwareInfo info)
+        {
+            // Crear un identificador único basado en componentes de hardware
+            string baseString = $"{info.Cpu}|{info.Motherboard}|{info.BiosVersion}";
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            {
+                byte[] bytes = System.Text.Encoding.UTF8.GetBytes(baseString);
+                byte[] hash = sha.ComputeHash(bytes);
+                return BitConverter.ToString(hash).Replace("-", "").Substring(0, 32);
+            }
         }
 
         public List<NetworkConnection> GetNetworkConnections()

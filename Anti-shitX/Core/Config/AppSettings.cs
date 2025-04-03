@@ -3,7 +3,7 @@
     public static class AppSettings
     {
         // URL base de la API
-        public static string ApiBaseUrl { get; set; } = "https://anti5-0.onrender.com/api";
+        public static string ApiBaseUrl { get; set; } = "https://antishit-server2-0.onrender.com/api";
 
         // Intervalo de monitoreo en milisegundos
         public static int MonitorIntervalMs { get; set; } = 30000;

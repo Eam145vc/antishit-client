@@ -11,40 +11,137 @@ namespace AntiCheatClient.DetectionEngine
 {
     public class ProcessMonitor
     {
-        // Lista de nombres de procesos que representan el juego
-        private readonly List<string> _gameProcessNames = new List<string>
+        // Nombres de procesos de juego conocidos
+        private static readonly string[] GameProcessNames = new[]
         {
-            "ModernWarfare", "BlackOpsColdWar", "Warzone", "Vanguard", "MW2"
+            "ModernWarfare", "BlackOpsColdWar", "Warzone",
+            "Vanguard", "MW2", "cod"
         };
 
-        public void Initialize()
+        /// <summary>
+        /// Obtiene una lista de todos los procesos en ejecución
+        /// </summary>
+        /// <returns>Lista de información de procesos</returns>
+        public List<ProcessInfo> GetRunningProcesses()
         {
-            // Opcional: configurar monitoreo de inicio/fin de procesos
+            var result = new List<ProcessInfo>();
+
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Process"))
+                {
+                    foreach (ManagementObject processObj in searcher.Get())
+                    {
+                        try
+                        {
+                            var processInfo = CreateProcessInfo(processObj);
+
+                            // Verificar si es un proceso de juego conocido
+                            if (!IsGameProcess(processInfo.Name))
+                            {
+                                processInfo.IsSigned = IsFileSigned(processInfo.FilePath);
+                            }
+
+                            result.Add(processInfo);
+                        }
+                        catch (Exception procEx)
+                        {
+                            Console.WriteLine($"Error procesando proceso: {procEx.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener procesos: {ex.Message}");
+            }
+
+            return result;
         }
 
-        public bool IsGameRunning()
+        /// <summary>
+        /// Crea un objeto ProcessInfo a partir de un objeto de administración
+        /// </summary>
+        private ProcessInfo CreateProcessInfo(ManagementObject processObj)
+        {
+            var processInfo = new ProcessInfo
+            {
+                Pid = Convert.ToInt32(processObj["ProcessId"]),
+                Name = processObj["Name"]?.ToString() ?? "Desconocido",
+                FilePath = processObj["ExecutablePath"]?.ToString() ?? string.Empty,
+                CommandLine = processObj["CommandLine"]?.ToString() ?? string.Empty
+            };
+
+            // Obtener información adicional del archivo
+            if (!string.IsNullOrEmpty(processInfo.FilePath) && File.Exists(processInfo.FilePath))
+            {
+                try
+                {
+                    var versionInfo = FileVersionInfo.GetVersionInfo(processInfo.FilePath);
+                    processInfo.FileHash = CalculateFileHash(processInfo.FilePath);
+                    processInfo.FileVersion = versionInfo.FileVersion ?? "N/A";
+                }
+                catch
+                {
+                    processInfo.FileHash = "N/A";
+                    processInfo.FileVersion = "N/A";
+                }
+            }
+
+            // Obtener información de ejecución
+            try
+            {
+                using (Process proc = Process.GetProcessById(processInfo.Pid))
+                {
+                    processInfo.StartTime = proc.StartTime.ToString("yyyy-MM-dd HH:mm:ss");
+                    processInfo.MemoryUsage = proc.WorkingSet64;
+                }
+            }
+            catch
+            {
+                processInfo.StartTime = "N/A";
+                processInfo.MemoryUsage = 0;
+            }
+
+            return processInfo;
+        }
+
+        /// <summary>
+        /// Calcula el hash SHA-256 de un archivo
+        /// </summary>
+        private string CalculateFileHash(string filePath)
         {
             try
             {
-                Process[] processes = Process.GetProcesses();
-
-                foreach (Process process in processes)
+                using (var sha256 = SHA256.Create())
                 {
-                    try
+                    using (var stream = File.OpenRead(filePath))
                     {
-                        if (_gameProcessNames.Any(name =>
-                            process.ProcessName.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0))
-                        {
-                            return true;
-                        }
-                    }
-                    catch
-                    {
-                        // Ignorar errores al acceder a un proceso específico
+                        var hash = sha256.ComputeHash(stream);
+                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
                     }
                 }
+            }
+            catch
+            {
+                return "N/A";
+            }
+        }
 
-                return false;
+        /// <summary>
+        /// Verifica si un archivo está firmado digitalmente
+        /// </summary>
+        private bool IsFileSigned(string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                    return false;
+
+                var versionInfo = FileVersionInfo.GetVersionInfo(filePath);
+                return !string.IsNullOrEmpty(versionInfo.CompanyName) &&
+                       (versionInfo.CompanyName.Contains("Microsoft") ||
+                        versionInfo.CompanyName.Contains("Windows"));
             }
             catch
             {
@@ -52,98 +149,26 @@ namespace AntiCheatClient.DetectionEngine
             }
         }
 
-        public List<ProcessInfo> GetRunningProcesses()
+        /// <summary>
+        /// Verifica si un nombre de proceso pertenece a un juego conocido
+        /// </summary>
+        private bool IsGameProcess(string processName)
         {
-            List<ProcessInfo> result = new List<ProcessInfo>();
-
-            try
-            {
-                var searcher = new ManagementObjectSearcher(
-                    "SELECT * FROM Win32_Process");
-
-                foreach (ManagementObject process in searcher.Get())
-                {
-                    try
-                    {
-                        int pid = Convert.ToInt32(process["ProcessId"]);
-                        string name = process["Name"]?.ToString() ?? "";
-                        string execPath = process["ExecutablePath"]?.ToString() ?? "";
-                        string commandLine = process["CommandLine"]?.ToString() ?? "";
-
-                        ProcessInfo processInfo = new ProcessInfo
-                        {
-                            Name = name,
-                            Pid = pid,
-                            FilePath = execPath,
-                            CommandLine = commandLine
-                        };
-
-                        // Obtener hash del archivo ejecutable si está disponible
-                        if (!string.IsNullOrEmpty(execPath) && File.Exists(execPath))
-                        {
-                            try
-                            {
-                                processInfo.FileHash = CalculateSha256(execPath);
-                                processInfo.FileVersion = FileVersionInfo.GetVersionInfo(execPath).FileVersion;
-
-                                // Verificar firma del archivo (simplificado)
-                                processInfo.IsSigned = IsFileSigned(execPath);
-                            }
-                            catch
-                            {
-                                // Ignorar errores al acceder al archivo
-                            }
-                        }
-
-                        // Obtener tiempo de inicio
-                        try
-                        {
-                            using (Process proc = Process.GetProcessById(pid))
-                            {
-                                processInfo.StartTime = proc.StartTime.ToString("yyyy-MM-dd HH:mm:ss");
-                                processInfo.MemoryUsage = proc.WorkingSet64;
-                            }
-                        }
-                        catch
-                        {
-                            // Ignorar errores al obtener info adicional
-                        }
-
-                        result.Add(processInfo);
-                    }
-                    catch
-                    {
-                        // Ignorar errores en procesos individuales
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error obteniendo procesos: {ex.Message}");
-            }
-
-            return result;
+            return GameProcessNames.Any(game =>
+                processName.IndexOf(game, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
-        private string CalculateSha256(string filePath)
-        {
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                using (FileStream stream = File.OpenRead(filePath))
-                {
-                    byte[] hash = sha256.ComputeHash(stream);
-                    return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                }
-            }
-        }
-
-        private bool IsFileSigned(string filePath)
+        /// <summary>
+        /// Verifica si alguno de los juegos está en ejecución
+        /// </summary>
+        public bool IsGameRunning()
         {
             try
             {
-                // Simplificado: en una implementación real se usaría WinVerifyTrust
-                FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(filePath);
-                return !string.IsNullOrEmpty(versionInfo.CompanyName);
+                Process[] processes = Process.GetProcesses();
+
+                return processes.Any(process =>
+                    IsGameProcess(process.ProcessName));
             }
             catch
             {

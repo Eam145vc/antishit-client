@@ -4,6 +4,7 @@
     {
         public string Cpu { get; set; }
         public string Gpu { get; set; }
+        public string GpuDriverVersion { get; set; }  // Propiedad añadida
         public string Ram { get; set; }
         public string Motherboard { get; set; }
         public string Storage { get; set; }

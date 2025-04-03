@@ -60,7 +60,7 @@ namespace AntiCheatClient.Core.Services
                     return false;
                 }
 
-                // Crear un objeto anónimo con exactamente la estructura que espera el servidor
+                // Crear objeto con la estructura exacta que espera el servidor
                 var requestData = new
                 {
                     activisionId = data.ActivisionId,  // Nota: case sensitive, debe ser camelCase
@@ -71,8 +71,8 @@ namespace AntiCheatClient.Core.Services
                     isGameRunning = data.IsGameRunning,
                     processes = data.Processes,
                     usbDevices = data.UsbDevices,
-                    hardwareInfo = data.HardwareInfo,
-                    systemInfo = data.SystemInfo,
+                    hardwareInfo = data.HardwareInfo,  // Asegúrate de incluir esto
+                    systemInfo = data.SystemInfo,      // Asegúrate de incluir esto
                     networkConnections = data.NetworkConnections,
                     loadedDrivers = data.LoadedDrivers
                 };
