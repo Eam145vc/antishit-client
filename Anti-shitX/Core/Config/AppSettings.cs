@@ -13,5 +13,20 @@
 
         // Máximo tamaño de captura de pantalla (en bytes)
         public static int MaxScreenshotSize { get; set; } = 1024 * 1024 * 5; // 5MB
+
+        // Modo de depuración - Habilitar para más logs
+        public static bool DebugMode { get; set; } = true;
+
+        // Omitir verificación de API - activar esta opción si el API no está disponible
+        public static bool SkipApiVerification { get; set; } = true;
+
+        // Timeout del API en segundos
+        public static int ApiTimeoutSeconds { get; set; } = 5;
+
+        // Número de reintentos de conexión
+        public static int ConnectionRetries { get; set; } = 3;
+
+        // Mostrar errores detallados al usuario
+        public static bool ShowDetailedErrors { get; set; } = true;
     }
 }

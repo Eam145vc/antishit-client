@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Win32;
 using Newtonsoft.Json;
 using AntiCheatClient.Core.Models;
+using AntiCheatClient.DetectionEngine;
 
 namespace AntiCheatClient.Core.Services
 {
@@ -65,6 +66,10 @@ namespace AntiCheatClient.Core.Services
                 // Recopilar drivers cargados
                 List<DriverInfo> loadedDrivers = GetLoadedDrivers();
 
+                // Recopilar información de procesos en ejecución
+                ProcessMonitor processMonitor = new ProcessMonitor();
+                List<ProcessInfo> runningProcesses = processMonitor.GetRunningProcesses();
+
                 // Recopilar información del sistema
                 MonitorData monitorData = new MonitorData
                 {
@@ -89,12 +94,16 @@ namespace AntiCheatClient.Core.Services
                     NetworkConnections = networkConnections,
 
                     // Drivers cargados
-                    LoadedDrivers = loadedDrivers
+                    LoadedDrivers = loadedDrivers,
+
+                    // Procesos en ejecución
+                    Processes = runningProcesses
                 };
 
                 // Debuggear datos enviados
                 Console.WriteLine($"Enviando systemInfo: {JsonConvert.SerializeObject(systemInfo)}");
                 Console.WriteLine($"Enviando hardwareInfo: {JsonConvert.SerializeObject(hardwareInfo)}");
+                Console.WriteLine($"Enviando processes: {runningProcesses.Count} procesos");
 
                 // Enviar datos al servidor
                 bool monitorResult = await _apiService.SendMonitorData(monitorData);
