@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Path: Anti-shitX/Core/Services/MonitorService.cs
+// Complete file
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Management;
@@ -28,6 +31,10 @@ namespace AntiCheatClient.Core.Services
         {
             try
             {
+                // Log timestamp to track execution
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                Console.WriteLine($"[{timestamp}] Iniciando envío de datos de monitoreo");
+
                 // Verificar si hay conexión antes de intentar enviar datos
                 if (!_apiService.IsConnected)
                 {
@@ -70,6 +77,9 @@ namespace AntiCheatClient.Core.Services
                 ProcessMonitor processMonitor = new ProcessMonitor();
                 List<ProcessInfo> runningProcesses = processMonitor.GetRunningProcesses();
 
+                // Log process count to verify 
+                Console.WriteLine($"[{timestamp}] Recopilados {runningProcesses.Count} procesos");
+
                 // Recopilar información del sistema
                 MonitorData monitorData = new MonitorData
                 {
@@ -101,12 +111,13 @@ namespace AntiCheatClient.Core.Services
                 };
 
                 // Debuggear datos enviados
-                Console.WriteLine($"Enviando systemInfo: {JsonConvert.SerializeObject(systemInfo)}");
-                Console.WriteLine($"Enviando hardwareInfo: {JsonConvert.SerializeObject(hardwareInfo)}");
-                Console.WriteLine($"Enviando processes: {runningProcesses.Count} procesos");
+                Console.WriteLine($"[{timestamp}] Enviando systemInfo: {JsonConvert.SerializeObject(systemInfo)}");
+                Console.WriteLine($"[{timestamp}] Enviando hardwareInfo: {JsonConvert.SerializeObject(hardwareInfo)}");
+                Console.WriteLine($"[{timestamp}] Enviando processes: {runningProcesses.Count} procesos");
 
                 // Enviar datos al servidor
                 bool monitorResult = await _apiService.SendMonitorData(monitorData);
+                Console.WriteLine($"[{timestamp}] Resultado del envío: {(monitorResult ? "Éxito" : "Fallo")}");
 
                 // También enviamos el estado del juego separadamente
                 await _apiService.SendGameStatus(activisionId, channelId, isGameRunning);

@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Path: Anti-shitX/UI/Windows/MainOverlay.xaml.cs
+
+using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -350,6 +352,49 @@ namespace AntiCheatClient.UI.Windows
             {
                 btnScreenshot.IsEnabled = true;
                 btnScreenshot.Content = "Capturar pantalla";
+            }
+        }
+
+        // Añadido método faltante DiagButton_Click
+        private void DiagButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Debug.WriteLine("Botón de diagnóstico presionado");
+
+                // Mostrar información de estado de conexión
+                string connectionStatus = _apiService.IsConnected ? "Conectado" : "Desconectado";
+                string lastError = _apiService.LastErrorMessage;
+                string apiUrl = AppSettings.ApiBaseUrl;
+                string debugMode = AppSettings.DebugMode ? "Activado" : "Desactivado";
+
+                string message = $"Estado de conexión: {connectionStatus}\n" +
+                                $"URL del API: {apiUrl}\n" +
+                                $"Modo depuración: {debugMode}\n" +
+                                $"ID Activision: {_activisionId}\n" +
+                                $"Canal: {_channelId}\n\n";
+
+                if (!string.IsNullOrEmpty(lastError))
+                {
+                    message += $"Último error: {lastError}";
+                }
+
+                MessageBox.Show(
+                    message,
+                    "Información de Diagnóstico",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information
+                );
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error en DiagButton_Click: {ex.Message}");
+                MessageBox.Show(
+                    $"Error al mostrar diagnóstico: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
             }
         }
 

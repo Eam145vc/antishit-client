@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Path: Anti-shitX/DetectionEngine/ProcessMonitor.cs
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,6 +13,9 @@ namespace AntiCheatClient.DetectionEngine
 {
     public class ProcessMonitor
     {
+        // Add version constant to track changes
+        private const string VERSION = "1.2.0-20250405"; // Format: Version-YYYYMMDD
+
         // Nombres de procesos de juego conocidos
         private static readonly string[] GameProcessNames = new[]
         {
@@ -26,127 +31,167 @@ namespace AntiCheatClient.DetectionEngine
         {
             var result = new List<ProcessInfo>();
 
+            // Log version to confirm we're running the updated code
+            Console.WriteLine($"ProcessMonitor running version: {VERSION}");
+            Debug.WriteLine($"ProcessMonitor running version: {VERSION}");
+
             try
             {
-                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Process"))
+                // Use direct Process.GetProcesses() approach for better compatibility
+                var allProcesses = Process.GetProcesses();
+                Console.WriteLine($"Found {allProcesses.Length} running processes");
+
+                foreach (var process in allProcesses)
                 {
-                    foreach (ManagementObject processObj in searcher.Get())
+                    try
                     {
+                        var processInfo = new ProcessInfo
+                        {
+                            Name = process.ProcessName,
+                            Pid = process.Id
+                        };
+
+                        // Try to get file info (will fail for system processes)
                         try
                         {
-                            var processInfo = CreateProcessInfo(processObj);
-
-                            // Verificar si es un proceso de juego conocido
-                            if (!IsGameProcess(processInfo.Name))
+                            // MainModule might throw exception for system processes
+                            if (process.MainModule != null)
                             {
-                                processInfo.IsSigned = IsFileSigned(processInfo.FilePath);
-                            }
+                                processInfo.FilePath = process.MainModule.FileName;
 
-                            result.Add(processInfo);
+                                // Get additional file info
+                                if (File.Exists(processInfo.FilePath))
+                                {
+                                    var fileInfo = new FileInfo(processInfo.FilePath);
+                                    var versionInfo = FileVersionInfo.GetVersionInfo(processInfo.FilePath);
+
+                                    processInfo.FileVersion = versionInfo.FileVersion ?? "N/A";
+                                    processInfo.IsSigned = !string.IsNullOrEmpty(versionInfo.CompanyName);
+
+                                    try
+                                    {
+                                        // Calculate file hash safely
+                                        using (var fileStream = new FileStream(
+                                            processInfo.FilePath,
+                                            FileMode.Open,
+                                            FileAccess.Read,
+                                            FileShare.ReadWrite | FileShare.Delete))
+                                        {
+                                            using (var sha256 = SHA256.Create())
+                                            {
+                                                var hashBytes = sha256.ComputeHash(fileStream);
+                                                processInfo.FileHash = BitConverter.ToString(hashBytes).Replace("-", "");
+                                            }
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        processInfo.FileHash = "Error al calcular";
+                                    }
+                                }
+                            }
                         }
-                        catch (Exception procEx)
+                        catch (Exception ex)
                         {
-                            Console.WriteLine($"Error procesando proceso: {procEx.Message}");
+                            // System process or access denied
+                            processInfo.FilePath = "Acceso restringido: " + ex.Message;
                         }
+
+                        // Get memory usage
+                        try
+                        {
+                            processInfo.MemoryUsage = process.WorkingSet64;
+                        }
+                        catch
+                        {
+                            processInfo.MemoryUsage = 0;
+                        }
+
+                        // Get start time
+                        try
+                        {
+                            processInfo.StartTime = process.StartTime.ToString("yyyy-MM-dd HH:mm:ss");
+                        }
+                        catch
+                        {
+                            processInfo.StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        }
+
+                        // Try to get command line using WMI
+                        try
+                        {
+                            using (var searcher = new ManagementObjectSearcher(
+                                $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {process.Id}"))
+                            {
+                                foreach (var item in searcher.Get())
+                                {
+                                    processInfo.CommandLine = item["CommandLine"]?.ToString() ?? "N/A";
+                                    break;
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            processInfo.CommandLine = "N/A";
+                        }
+
+                        // Set defaults for any missing data
+                        if (string.IsNullOrEmpty(processInfo.Name)) processInfo.Name = "Proceso " + process.Id;
+                        if (string.IsNullOrEmpty(processInfo.FilePath)) processInfo.FilePath = "N/A";
+                        if (string.IsNullOrEmpty(processInfo.FileHash)) processInfo.FileHash = "N/A";
+                        if (string.IsNullOrEmpty(processInfo.CommandLine)) processInfo.CommandLine = "N/A";
+                        if (string.IsNullOrEmpty(processInfo.FileVersion)) processInfo.FileVersion = "N/A";
+                        if (string.IsNullOrEmpty(processInfo.StartTime)) processInfo.StartTime = "N/A";
+
+                        // Add version indicator to show this is from the updated code
+                        processInfo.SignatureInfo = $"Procesado por v{VERSION}";
+
+                        result.Add(processInfo);
+                    }
+                    catch (Exception procEx)
+                    {
+                        Console.WriteLine($"Error procesando proceso {process.Id}: {procEx.Message}");
+
+                        // Add minimal info for the failed process
+                        result.Add(new ProcessInfo
+                        {
+                            Name = process.ProcessName ?? "Error-" + process.Id,
+                            Pid = process.Id,
+                            FilePath = "Error al procesar",
+                            FileHash = "N/A",
+                            FileVersion = "N/A",
+                            IsSigned = false,
+                            SignatureInfo = $"Error: {procEx.Message}",
+                            MemoryUsage = 0,
+                            StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                        });
                     }
                 }
+
+                // Log success with count
+                Console.WriteLine($"Successfully collected {result.Count} processes");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al obtener procesos: {ex.Message}");
+                Console.WriteLine($"Error general en GetRunningProcesses: {ex.Message}");
+                Debug.WriteLine($"Error general en GetRunningProcesses: {ex.Message}");
+
+                // Add a single error entry
+                result.Add(new ProcessInfo
+                {
+                    Name = "ERROR en recolección",
+                    Pid = -1,
+                    FilePath = ex.Message,
+                    FileHash = "N/A",
+                    FileVersion = "N/A",
+                    IsSigned = false,
+                    SignatureInfo = $"Error v{VERSION}: {ex.Message}",
+                    MemoryUsage = 0,
+                    StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                });
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// Crea un objeto ProcessInfo a partir de un objeto de administración
-        /// </summary>
-        private ProcessInfo CreateProcessInfo(ManagementObject processObj)
-        {
-            var processInfo = new ProcessInfo
-            {
-                Pid = Convert.ToInt32(processObj["ProcessId"]),
-                Name = processObj["Name"]?.ToString() ?? "Desconocido",
-                FilePath = processObj["ExecutablePath"]?.ToString() ?? string.Empty,
-                CommandLine = processObj["CommandLine"]?.ToString() ?? string.Empty
-            };
-
-            // Obtener información adicional del archivo
-            if (!string.IsNullOrEmpty(processInfo.FilePath) && File.Exists(processInfo.FilePath))
-            {
-                try
-                {
-                    var versionInfo = FileVersionInfo.GetVersionInfo(processInfo.FilePath);
-                    processInfo.FileHash = CalculateFileHash(processInfo.FilePath);
-                    processInfo.FileVersion = versionInfo.FileVersion ?? "N/A";
-                }
-                catch
-                {
-                    processInfo.FileHash = "N/A";
-                    processInfo.FileVersion = "N/A";
-                }
-            }
-
-            // Obtener información de ejecución
-            try
-            {
-                using (Process proc = Process.GetProcessById(processInfo.Pid))
-                {
-                    processInfo.StartTime = proc.StartTime.ToString("yyyy-MM-dd HH:mm:ss");
-                    processInfo.MemoryUsage = proc.WorkingSet64;
-                }
-            }
-            catch
-            {
-                processInfo.StartTime = "N/A";
-                processInfo.MemoryUsage = 0;
-            }
-
-            return processInfo;
-        }
-
-        /// <summary>
-        /// Calcula el hash SHA-256 de un archivo
-        /// </summary>
-        private string CalculateFileHash(string filePath)
-        {
-            try
-            {
-                using (var sha256 = SHA256.Create())
-                {
-                    using (var stream = File.OpenRead(filePath))
-                    {
-                        var hash = sha256.ComputeHash(stream);
-                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                    }
-                }
-            }
-            catch
-            {
-                return "N/A";
-            }
-        }
-
-        /// <summary>
-        /// Verifica si un archivo está firmado digitalmente
-        /// </summary>
-        private bool IsFileSigned(string filePath)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                    return false;
-
-                var versionInfo = FileVersionInfo.GetVersionInfo(filePath);
-                return !string.IsNullOrEmpty(versionInfo.CompanyName) &&
-                       (versionInfo.CompanyName.Contains("Microsoft") ||
-                        versionInfo.CompanyName.Contains("Windows"));
-            }
-            catch
-            {
-                return false;
-            }
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
-﻿namespace AntiCheatClient.Core.Models
+﻿// Path: Anti-shitX/Core/Models/ProcessInfo.cs
+
+namespace AntiCheatClient.Core.Models
 {
     public class ProcessInfo
     {
@@ -12,5 +14,6 @@
         public string SignatureInfo { get; set; }
         public long MemoryUsage { get; set; }
         public string StartTime { get; set; }
+        public bool Suspicious { get; set; } // Added this property
     }
 }
