@@ -9,7 +9,6 @@ using AntiCheatClient.Core.Models;
 using AntiCheatClient.Core.Services;
 using AntiCheatClient.DetectionEngine;
 using System.Diagnostics;
-using System.Windows.Controls;
 
 namespace AntiCheatClient.UI.Windows
 {
@@ -26,18 +25,15 @@ namespace AntiCheatClient.UI.Windows
         private readonly MonitorService _monitorService;
         private readonly ScreenshotService _screenshotService;
         private readonly DeviceMonitor _deviceMonitor;
-        private ToolTip _statusTooltip;
 
         private DispatcherTimer _statusUpdateTimer;
         private DispatcherTimer _monitorTimer;
-        private string _pcStartTime;
 
         public MainOverlay(string activisionId, int channelId)
         {
             try
             {
                 Debug.WriteLine($"Iniciando MainOverlay con ID: {activisionId}, Canal: {channelId}");
-                Console.WriteLine($"Iniciando MainOverlay con ID: {activisionId}, Canal: {channelId}");
 
                 InitializeComponent();
 
@@ -49,11 +45,6 @@ namespace AntiCheatClient.UI.Windows
                 CurrentChannelId = channelId;
                 ClientStartTime = DateTime.Now;
 
-                // Configurar tooltip para el indicador de estado
-                _statusTooltip = new ToolTip();
-                _statusTooltip.Content = "Estado de conexión: Verificando...";
-                statusIndicator.ToolTip = _statusTooltip;
-
                 Debug.WriteLine("MainOverlay - Inicializando servicios");
 
                 // Inicializar servicios
@@ -64,9 +55,6 @@ namespace AntiCheatClient.UI.Windows
 
                 // Configurar temporizadores
                 InitializeTimers();
-
-                // Obtener hora de inicio
-                _pcStartTime = GetSystemUptimeString();
 
                 // Posicionar en parte superior central
                 PositionWindowAtTopCenter();
@@ -89,74 +77,13 @@ namespace AntiCheatClient.UI.Windows
             catch (Exception ex)
             {
                 Debug.WriteLine($"ERROR EN MAINOVERLAY: {ex.Message}\n{ex.StackTrace}");
-                Console.WriteLine($"ERROR EN MAINOVERLAY: {ex.Message}\n{ex.StackTrace}");
 
-                // Mostrar el error en un cuadro de diálogo para asegurar que sea visible
                 MessageBox.Show(
                     $"Error crítico al inicializar MainOverlay:\n{ex.Message}\n\nDetalles:\n{ex.StackTrace}",
                     "Error de Inicialización",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
                 );
-            }
-        }
-
-        private void DiagButton_Click(object sender, RoutedEventArgs e)
-        {
-            ShowConnectionDiagnosticInfo();
-        }
-
-        private void ShowConnectionDiagnosticInfo()
-        {
-            string statusText = _apiService.IsConnected ? "CONECTADO" : "DESCONECTADO";
-            string errorDetails = string.IsNullOrEmpty(_apiService.LastErrorMessage)
-                                ? "No hay errores registrados"
-                                : _apiService.LastErrorMessage;
-
-            string message = $"DIAGNÓSTICO DE CONEXIÓN\n\n" +
-                            $"URL del API: {AppSettings.ApiBaseUrl}\n" +
-                            $"Estado actual: {statusText}\n" +
-                            $"Último error: {errorDetails}\n\n" +
-                            $"ID de Activision: {_activisionId}\n" +
-                            $"Canal: {_channelId}\n" +
-                            $"Tiempo de ejecución: {DateTime.Now - ClientStartTime}\n\n" +
-                            $"¿Desea intentar reconectar ahora?";
-
-            var result = MessageBox.Show(
-                message,
-                "Diagnóstico de Conexión",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Information
-            );
-
-            if (result == MessageBoxResult.Yes)
-            {
-                ForceConnectionCheck();
-            }
-        }
-
-        private async void ForceConnectionCheck()
-        {
-            try
-            {
-                UpdateConnectionStatus(false, "Verificando...");
-                bool isConnected = await _apiService.CheckConnection();
-                UpdateConnectionStatus(isConnected, _apiService.LastErrorMessage);
-
-                if (!isConnected)
-                {
-                    MessageBox.Show(
-                        $"No se pudo establecer conexión con el servidor.\n\nError: {_apiService.LastErrorMessage}",
-                        "Error de Conexión",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error
-                    );
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error forzando verificación de conexión: {ex.Message}");
-                UpdateConnectionStatus(false, $"Error: {ex.Message}");
             }
         }
 
@@ -185,7 +112,7 @@ namespace AntiCheatClient.UI.Windows
 
                 // Timer para actualizar el estado de conexión
                 _statusUpdateTimer = new DispatcherTimer();
-                _statusUpdateTimer.Interval = TimeSpan.FromSeconds(30); // Comprobar cada 30 segundos
+                _statusUpdateTimer.Interval = TimeSpan.FromSeconds(30);
                 _statusUpdateTimer.Tick += StatusUpdateTimer_Tick;
                 _statusUpdateTimer.Start();
 
@@ -200,7 +127,6 @@ namespace AntiCheatClient.UI.Windows
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error al inicializar temporizadores: {ex.Message}");
-                Console.WriteLine($"Error al inicializar temporizadores: {ex.Message}");
             }
         }
 
@@ -210,10 +136,10 @@ namespace AntiCheatClient.UI.Windows
             {
                 Debug.WriteLine("Inicializando monitoreo");
 
-                // Verificar estado de conexión inicial
-                UpdateConnectionStatus(false, "Verificando conexión inicial...");
-                bool isConnected = await _apiService.CheckConnection();
-                UpdateConnectionStatus(isConnected, _apiService.LastErrorMessage);
+                // Verificación inicial de conexión con retries
+                bool isConnected = await RetryConnectionCheck(3);
+                Debug.WriteLine($"Estado inicial de conexión: {(isConnected ? "Conectado" : "Desconectado")}");
+                UpdateConnectionStatus(isConnected);
 
                 // Inicializar monitoreo de dispositivos
                 _deviceMonitor.Initialize();
@@ -226,35 +152,37 @@ namespace AntiCheatClient.UI.Windows
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error al inicializar monitoreo: {ex.Message}");
-                Console.WriteLine($"Error al inicializar monitoreo: {ex.Message}");
-                UpdateConnectionStatus(false, $"Error: {ex.Message}");
             }
         }
 
-        private void UpdateConnectionStatus(bool isConnected, string statusMessage = "")
+        private async Task<bool> RetryConnectionCheck(int maxRetries)
+        {
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    bool isConnected = await _apiService.CheckConnection();
+                    if (isConnected) return true;
+
+                    // Esperar un tiempo antes de reintentar
+                    await Task.Delay(attempt * 2000); // Incrementa el tiempo de espera
+                }
+                catch
+                {
+                    // Ignorar errores en los intentos de conexión
+                }
+            }
+            return false;
+        }
+
+        private void UpdateConnectionStatus(bool isConnected)
         {
             try
             {
                 Dispatcher.Invoke(() =>
                 {
                     statusIndicator.Fill = isConnected ? Brushes.Green : Brushes.Red;
-
-                    // Actualizar tooltip con información de estado
-                    string statusText = isConnected ? "CONECTADO" : "DESCONECTADO";
-                    string tooltipText = $"Estado: {statusText}";
-
-                    if (!string.IsNullOrEmpty(statusMessage))
-                    {
-                        tooltipText += $"\n{statusMessage}";
-                    }
-
-                    _statusTooltip.Content = tooltipText;
-
-                    Debug.WriteLine($"Indicador de estado actualizado a: {statusText}");
-                    if (!string.IsNullOrEmpty(statusMessage))
-                    {
-                        Debug.WriteLine($"Mensaje de estado: {statusMessage}");
-                    }
+                    Debug.WriteLine($"Indicador de estado actualizado a: {(isConnected ? "Verde (Conectado)" : "Rojo (Desconectado)")}");
                 });
             }
             catch (Exception ex)
@@ -268,13 +196,59 @@ namespace AntiCheatClient.UI.Windows
             try
             {
                 Debug.WriteLine("Verificando estado de conexión periódicamente");
-                bool isConnected = await _apiService.CheckConnection();
-                UpdateConnectionStatus(isConnected, _apiService.LastErrorMessage);
+
+                // Usar método de reintento
+                bool wasConnected = _apiService.IsConnected;
+                bool isConnected = await RetryConnectionCheck(2);
+
+                // Solo actualizar si cambia el estado
+                if (wasConnected != isConnected)
+                {
+                    UpdateConnectionStatus(isConnected);
+
+                    if (!isConnected)
+                    {
+                        // Intentar reconectar de forma más agresiva
+                        await Task.Run(async () =>
+                        {
+                            for (int i = 0; i < 3; i++)
+                            {
+                                await Task.Delay(5000 * (i + 1)); // Incrementar tiempo entre intentos
+                                bool reconnected = await RetryConnectionCheck(2);
+                                if (reconnected)
+                                {
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        UpdateConnectionStatus(true);
+                                        SendMonitorData(); // Enviar datos al reconectar
+                                    });
+                                    break;
+                                }
+                            }
+                        });
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error en StatusUpdateTimer_Tick: {ex.Message}");
-                UpdateConnectionStatus(false, $"Error: {ex.Message}");
+            }
+        }
+
+        private async Task EnsureConnection()
+        {
+            if (!_apiService.IsConnected)
+            {
+                bool reconnected = await RetryConnectionCheck(3);
+                if (reconnected)
+                {
+                    UpdateConnectionStatus(true);
+                    await SendMonitorData();
+                }
+                else
+                {
+                    UpdateConnectionStatus(false);
+                }
             }
         }
 
@@ -282,6 +256,9 @@ namespace AntiCheatClient.UI.Windows
         {
             try
             {
+                // Asegurar conexión antes de enviar datos
+                await EnsureConnection();
+
                 Debug.WriteLine("Enviando datos de monitoreo periódicamente");
                 await SendMonitorData();
             }
@@ -291,40 +268,27 @@ namespace AntiCheatClient.UI.Windows
             }
         }
 
-        private async Task SendMonitorData()
+        private async Task<bool> SendMonitorData()
         {
             try
             {
                 Debug.WriteLine("Enviando datos de monitoreo al servidor");
-                // Solo intentamos enviar datos si estamos conectados
-                if (_apiService.IsConnected)
-                {
-                    bool result = await _monitorService.SendMonitorData();
-                    Debug.WriteLine($"Resultado del envío de datos: {(result ? "Exitoso" : "Fallido")}");
-
-                    // Si falló, actualizar el estado de conexión
-                    if (!result)
-                    {
-                        UpdateConnectionStatus(false, "Error enviando datos al servidor: " + _apiService.LastErrorMessage);
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine("No se enviaron datos porque no hay conexión con el servidor");
-                }
+                // Usar el método simplificado que ya incluye todos los datos
+                bool result = await _monitorService.SendMonitorData();
+                Debug.WriteLine($"Resultado del envío de datos: {(result ? "Exitoso" : "Fallido")}");
+                return result;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error enviando datos de monitoreo: {ex.Message}");
-                Console.WriteLine($"Error enviando datos de monitoreo: {ex.Message}");
-                UpdateConnectionStatus(false, $"Error: {ex.Message}");
+                return false;
             }
         }
 
         private void ApiService_ConnectionStatusChanged(object sender, bool isConnected)
         {
             Debug.WriteLine($"Estado de conexión cambiado a: {(isConnected ? "Conectado" : "Desconectado")}");
-            UpdateConnectionStatus(isConnected, _apiService.LastErrorMessage);
+            UpdateConnectionStatus(isConnected);
         }
 
         private void DeviceMonitor_DeviceChanged(object sender, DeviceChangedEventArgs e)
@@ -336,11 +300,8 @@ namespace AntiCheatClient.UI.Windows
                 {
                     Debug.WriteLine($"Dispositivo {(e.IsConnected ? "conectado" : "desconectado")}: {e.Device.Name}");
 
-                    // Enviar datos actualizados al servidor solo si hay conexión
-                    if (_apiService.IsConnected)
-                    {
-                        await SendMonitorData();
-                    }
+                    // Enviar datos actualizados al servidor
+                    await SendMonitorData();
 
                     // Mostrar notificación al usuario
                     Dispatcher.Invoke(() =>
@@ -373,57 +334,16 @@ namespace AntiCheatClient.UI.Windows
                 btnScreenshot.IsEnabled = false;
                 btnScreenshot.Content = "Capturando...";
 
-                if (!_apiService.IsConnected)
-                {
-                    MessageBox.Show(
-                        "No se puede enviar la captura de pantalla porque no hay conexión con el servidor.\n\n" +
-                        "Verifique su conexión e intente nuevamente.",
-                        "Error de Conexión",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning
-                    );
+                await _screenshotService.CaptureAndSendScreenshot(_activisionId, _channelId);
 
-                    btnScreenshot.Content = "Sin conexión";
-                    await Task.Delay(2000);
-                }
-                else
-                {
-                    bool result = await _screenshotService.CaptureAndSendScreenshot(_activisionId, _channelId);
-
-                    if (result)
-                    {
-                        btnScreenshot.Content = "Enviado ✓";
-                        Debug.WriteLine("Screenshot enviado correctamente");
-                    }
-                    else
-                    {
-                        btnScreenshot.Content = "Error ✗";
-                        Debug.WriteLine("Error enviando screenshot");
-
-                        MessageBox.Show(
-                            "Error al enviar la captura de pantalla al servidor.\n\n" +
-                            $"Error: {_apiService.LastErrorMessage}",
-                            "Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error
-                        );
-                    }
-
-                    await Task.Delay(2000);
-                }
+                btnScreenshot.Content = "Enviado ✓";
+                Debug.WriteLine("Screenshot enviado correctamente");
+                await Task.Delay(2000); // Mostrar "Enviado" por 2 segundos
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error al capturar pantalla: {ex.Message}");
                 btnScreenshot.Content = "Error";
-
-                MessageBox.Show(
-                    $"Error al capturar pantalla: {ex.Message}",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error
-                );
-
                 await Task.Delay(2000);
             }
             finally
@@ -476,28 +396,20 @@ namespace AntiCheatClient.UI.Windows
             try
             {
                 Debug.WriteLine("Reportando cierre del cliente al servidor");
-                // Solo reportar si hay conexión
-                if (_apiService.IsConnected)
+                // Enviar un reporte final al servidor indicando que el cliente fue cerrado por el usuario
+                var closeData = new
                 {
-                    // Enviar un reporte final al servidor indicando que el cliente fue cerrado por el usuario
-                    var closeData = new
-                    {
-                        activisionId = _activisionId,
-                        channelId = _channelId,
-                        timestamp = DateTime.Now,
-                        reason = "UserClosed",
-                        clientStartTime = ClientStartTime,
-                        clientDuration = (DateTime.Now - ClientStartTime).TotalMinutes
-                    };
+                    activisionId = _activisionId,
+                    channelId = _channelId,
+                    timestamp = DateTime.Now,
+                    reason = "UserClosed",
+                    clientStartTime = ClientStartTime,
+                    clientDuration = (DateTime.Now - ClientStartTime).TotalMinutes
+                };
 
-                    // Intentar enviar el reporte, ignorando el resultado
-                    await _apiService.ReportError($"Cliente cerrado por usuario: {JsonConvert.SerializeObject(closeData)}");
-                    Debug.WriteLine("Reporte de cierre enviado");
-                }
-                else
-                {
-                    Debug.WriteLine("No se pudo reportar cierre porque no hay conexión");
-                }
+                // Intentar enviar el reporte, ignorando el resultado
+                await _apiService.ReportError($"Cliente cerrado por usuario: {JsonConvert.SerializeObject(closeData)}");
+                Debug.WriteLine("Reporte de cierre enviado");
             }
             catch (Exception ex)
             {
@@ -506,32 +418,10 @@ namespace AntiCheatClient.UI.Windows
             }
         }
 
-        private string GetSystemUptimeString()
-        {
-            try
-            {
-                // Obtener tiempo de inicio del sistema
-                using (var uptime = new PerformanceCounter("System", "System Up Time"))
-                {
-                    uptime.NextValue(); // Primera llamada siempre retorna 0
-                    TimeSpan ts = TimeSpan.FromSeconds(uptime.NextValue());
-                    var result = $"{ts.Days}d {ts.Hours}h {ts.Minutes}m {ts.Seconds}s";
-                    Debug.WriteLine($"Tiempo de inicio del sistema: {result}");
-                    return result;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error al obtener tiempo de inicio: {ex.Message}");
-                return "Unknown";
-            }
-        }
-
         private void ShowNotification(string message)
         {
             Debug.WriteLine($"Mostrando notificación: {message}");
             // Simplemente mostrar un MessageBox por ahora
-            // En una implementación más avanzada, podría ser un Toast no intrusivo
             MessageBox.Show(message, "Anti-Cheat Monitor", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
