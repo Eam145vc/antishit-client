@@ -1,6 +1,4 @@
-﻿// Path: Anti-shitX/Core/Services/MonitorService.cs
-// Complete file
-
+﻿// Path: backend/Core/Services/MonitorService.cs
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,7 +7,6 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.ServiceProcess;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using Newtonsoft.Json;
@@ -18,9 +15,67 @@ using AntiCheatClient.DetectionEngine;
 
 namespace AntiCheatClient.Core.Services
 {
-    public class MonitorService
+    public partial class MonitorService
     {
         private readonly ApiService _apiService;
+
+        // P/Invoke declarations for low-level network information
+        [DllImport("iphlpapi.dll", SetLastError = true)]
+        private static extern uint GetExtendedTcpTable(
+            IntPtr pTcpTable,
+            ref uint dwOutBufLen,
+            bool sort,
+            int ipVersion,
+            int tblClass,
+            int reserved
+        );
+
+        [DllImport("iphlpapi.dll", SetLastError = true)]
+        private static extern uint GetExtendedUdpTable(
+            IntPtr pUdpTable,
+            ref uint dwOutBufLen,
+            bool sort,
+            int ipVersion,
+            int tblClass,
+            int reserved
+        );
+
+        // Enum for table classes
+        private enum TCP_TABLE_CLASS
+        {
+            TCP_TABLE_BASIC_LISTENER,
+            TCP_TABLE_BASIC_CONNECTIONS,
+            TCP_TABLE_BASIC_ALL,
+            TCP_TABLE_OWNER_PID_LISTENER,
+            TCP_TABLE_OWNER_PID_CONNECTIONS,
+            TCP_TABLE_OWNER_PID_ALL
+        }
+
+        private enum UDP_TABLE_CLASS
+        {
+            UDP_TABLE_BASIC,
+            UDP_TABLE_OWNER_PID
+        }
+
+        // Structs for network connection information
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MIB_TCPROW_OWNER_PID
+        {
+            public uint dwState;
+            public uint dwLocalAddr;
+            public uint dwLocalPort;
+            public uint dwRemoteAddr;
+            public uint dwRemotePort;
+            public uint dwOwningPid;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MIB_UDPROW_OWNER_PID
+        {
+            public uint dwLocalAddr;
+            public uint dwLocalPort;
+            public uint dwOwningPid;
+        }
 
         public MonitorService(ApiService apiService)
         {
@@ -31,10 +86,6 @@ namespace AntiCheatClient.Core.Services
         {
             try
             {
-                // Log timestamp to track execution
-                string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                Console.WriteLine($"[{timestamp}] Iniciando envío de datos de monitoreo");
-
                 // Verificar si hay conexión antes de intentar enviar datos
                 if (!_apiService.IsConnected)
                 {
@@ -77,9 +128,6 @@ namespace AntiCheatClient.Core.Services
                 ProcessMonitor processMonitor = new ProcessMonitor();
                 List<ProcessInfo> runningProcesses = processMonitor.GetRunningProcesses();
 
-                // Log process count to verify 
-                Console.WriteLine($"[{timestamp}] Recopilados {runningProcesses.Count} procesos");
-
                 // Recopilar información del sistema
                 MonitorData monitorData = new MonitorData
                 {
@@ -111,13 +159,12 @@ namespace AntiCheatClient.Core.Services
                 };
 
                 // Debuggear datos enviados
-                Console.WriteLine($"[{timestamp}] Enviando systemInfo: {JsonConvert.SerializeObject(systemInfo)}");
-                Console.WriteLine($"[{timestamp}] Enviando hardwareInfo: {JsonConvert.SerializeObject(hardwareInfo)}");
-                Console.WriteLine($"[{timestamp}] Enviando processes: {runningProcesses.Count} procesos");
+                Console.WriteLine($"Enviando systemInfo: {JsonConvert.SerializeObject(systemInfo)}");
+                Console.WriteLine($"Enviando hardwareInfo: {JsonConvert.SerializeObject(hardwareInfo)}");
+                Console.WriteLine($"Enviando processes: {runningProcesses.Count} procesos");
 
                 // Enviar datos al servidor
                 bool monitorResult = await _apiService.SendMonitorData(monitorData);
-                Console.WriteLine($"[{timestamp}] Resultado del envío: {(monitorResult ? "Éxito" : "Fallo")}");
 
                 // También enviamos el estado del juego separadamente
                 await _apiService.SendGameStatus(activisionId, channelId, isGameRunning);
@@ -131,6 +178,244 @@ namespace AntiCheatClient.Core.Services
             }
         }
 
+        // Resto de los métodos existentes en la clase (GetSystemInfo, GetHardwareInfo, etc.)
+        // Se mantienen igual que en la implementación original
+
+        public List<NetworkConnection> GetNetworkConnections()
+        {
+            List<NetworkConnection> connections = new List<NetworkConnection>();
+
+            try
+            {
+                // Get TCP Connections
+                connections.AddRange(GetTcpConnections());
+
+                // Get UDP Connections
+                connections.AddRange(GetUdpConnections());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error obteniendo conexiones de red: {ex.Message}");
+            }
+
+            return connections;
+        }
+
+        private List<NetworkConnection> GetTcpConnections()
+        {
+            List<NetworkConnection> tcpConnections = new List<NetworkConnection>();
+            uint tableSize = 0;
+            IntPtr tablePtr = IntPtr.Zero;
+
+            try
+            {
+                // First call to get the required buffer size
+                uint result = GetExtendedTcpTable(
+                    IntPtr.Zero,
+                    ref tableSize,
+                    true,
+                    2,  // AF_INET (IPv4)
+                    (int)TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL,
+                    0
+                );
+
+                // Allocate memory for the table
+                tablePtr = Marshal.AllocHGlobal((int)tableSize);
+
+                // Get the actual table
+                result = GetExtendedTcpTable(
+                    tablePtr,
+                    ref tableSize,
+                    true,
+                    2,  // AF_INET (IPv4)
+                    (int)TCP_TABLE_CLASS.TCP_TABLE_OWNER_PID_ALL,
+                    0
+                );
+
+                if (result == 0)
+                {
+                    // Read number of entries
+                    int numEntries = Marshal.ReadInt32(tablePtr);
+                    int structSize = Marshal.SizeOf(typeof(MIB_TCPROW_OWNER_PID));
+
+                    // Iterate through TCP connections
+                    for (int i = 0; i < numEntries; i++)
+                    {
+                        IntPtr rowPtr = new IntPtr(tablePtr.ToInt64() +
+                            Marshal.SizeOf(typeof(int)) +
+                            (i * structSize));
+
+                        MIB_TCPROW_OWNER_PID row =
+                            (MIB_TCPROW_OWNER_PID)Marshal.PtrToStructure(
+                                rowPtr,
+                                typeof(MIB_TCPROW_OWNER_PID)
+                            );
+
+                        // Convert network byte order ports
+                        int localPort = (int)((row.dwLocalPort >> 8) | ((row.dwLocalPort & 0xFF) << 8));
+                        int remotePort = (int)((row.dwRemotePort >> 8) | ((row.dwRemotePort & 0xFF) << 8));
+
+                        // Convert IP addresses
+                        string localAddress = new IPAddress(row.dwLocalAddr).ToString();
+                        string remoteAddress = new IPAddress(row.dwRemoteAddr).ToString();
+
+                        // Get process name
+                        string processName = GetProcessNameFromId(row.dwOwningPid);
+
+                        tcpConnections.Add(new NetworkConnection
+                        {
+                            LocalAddress = localAddress,
+                            LocalPort = localPort,
+                            RemoteAddress = remoteAddress,
+                            RemotePort = remotePort,
+                            Protocol = "TCP",
+                            State = GetTcpStateName(row.dwState),
+                            ProcessId = (int)row.dwOwningPid,
+                            ProcessName = processName
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error obteniendo conexiones TCP: {ex.Message}");
+            }
+            finally
+            {
+                // Free allocated memory
+                if (tablePtr != IntPtr.Zero)
+                    Marshal.FreeHGlobal(tablePtr);
+            }
+
+            return tcpConnections;
+        }
+
+        private List<NetworkConnection> GetUdpConnections()
+        {
+            List<NetworkConnection> udpConnections = new List<NetworkConnection>();
+            uint tableSize = 0;
+            IntPtr tablePtr = IntPtr.Zero;
+
+            try
+            {
+                // First call to get the required buffer size
+                uint result = GetExtendedUdpTable(
+                    IntPtr.Zero,
+                    ref tableSize,
+                    true,
+                    2,  // AF_INET (IPv4)
+                    (int)UDP_TABLE_CLASS.UDP_TABLE_OWNER_PID,
+                    0
+                );
+
+                // Allocate memory for the table
+                tablePtr = Marshal.AllocHGlobal((int)tableSize);
+
+                // Get the actual table
+                result = GetExtendedUdpTable(
+                    tablePtr,
+                    ref tableSize,
+                    true,
+                    2,  // AF_INET (IPv4)
+                    (int)UDP_TABLE_CLASS.UDP_TABLE_OWNER_PID,
+                    0
+                );
+
+                if (result == 0)
+                {
+                    // Read number of entries
+                    int numEntries = Marshal.ReadInt32(tablePtr);
+                    int structSize = Marshal.SizeOf(typeof(MIB_UDPROW_OWNER_PID));
+
+                    // Iterate through UDP connections
+                    for (int i = 0; i < numEntries; i++)
+                    {
+                        IntPtr rowPtr = new IntPtr(tablePtr.ToInt64() +
+                            Marshal.SizeOf(typeof(int)) +
+                            (i * structSize));
+
+                        MIB_UDPROW_OWNER_PID row =
+                            (MIB_UDPROW_OWNER_PID)Marshal.PtrToStructure(
+                                rowPtr,
+                                typeof(MIB_UDPROW_OWNER_PID)
+                            );
+
+                        // Convert network byte order port
+                        int localPort = (int)((row.dwLocalPort >> 8) | ((row.dwLocalPort & 0xFF) << 8));
+
+                        // Convert IP address
+                        string localAddress = new IPAddress(row.dwLocalAddr).ToString();
+
+                        // Get process name
+                        string processName = GetProcessNameFromId(row.dwOwningPid);
+
+                        udpConnections.Add(new NetworkConnection
+                        {
+                            LocalAddress = localAddress,
+                            LocalPort = localPort,
+                            RemoteAddress = "0.0.0.0",
+                            RemotePort = 0,
+                            Protocol = "UDP",
+                            State = "Listening",
+                            ProcessId = (int)row.dwOwningPid,
+                            ProcessName = processName
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error obteniendo conexiones UDP: {ex.Message}");
+            }
+            finally
+            {
+                // Free allocated memory
+                if (tablePtr != IntPtr.Zero)
+                    Marshal.FreeHGlobal(tablePtr);
+            }
+
+            return udpConnections;
+        }
+
+        // Helper method to get process name from process ID
+        private string GetProcessNameFromId(uint processId)
+        {
+            try
+            {
+                using (Process process = Process.GetProcessById((int)processId))
+                {
+                    return process.ProcessName;
+                }
+            }
+            catch
+            {
+                return "Unknown";
+            }
+        }
+
+        // Helper method to convert TCP state to readable string
+        private string GetTcpStateName(uint state)
+        {
+            switch (state)
+            {
+                case 1: return "Closed";
+                case 2: return "Listening";
+                case 3: return "SYN Sent";
+                case 4: return "SYN Received";
+                case 5: return "Established";
+                case 6: return "FIN Wait 1";
+                case 7: return "FIN Wait 2";
+                case 8: return "Close Wait";
+                case 9: return "Closing";
+                case 10: return "Last ACK";
+                case 11: return "Time Wait";
+                case 12: return "Delete TCB";
+                default: return "Unknown";
+            }
+        }
+
+        // Resto de los métodos de la clase (IsGameRunning, GetSystemInfo, etc.)
+        // Se mantienen igual que en la implementación original
         public bool IsGameRunning()
         {
             try
@@ -368,204 +653,6 @@ namespace AntiCheatClient.Core.Services
             }
         }
 
-        public List<NetworkConnection> GetNetworkConnections()
-        {
-            List<NetworkConnection> connections = new List<NetworkConnection>();
-
-            try
-            {
-                // Obtener la información de todas las conexiones TCP activas
-                IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
-
-                // Conexiones TCP
-                TcpConnectionInformation[] tcpConnections = properties.GetActiveTcpConnections();
-                foreach (TcpConnectionInformation tcpConnection in tcpConnections)
-                {
-                    try
-                    {
-                        NetworkConnection connection = new NetworkConnection
-                        {
-                            LocalAddress = tcpConnection.LocalEndPoint.Address.ToString(),
-                            LocalPort = tcpConnection.LocalEndPoint.Port,
-                            RemoteAddress = tcpConnection.RemoteEndPoint.Address.ToString(),
-                            RemotePort = tcpConnection.RemoteEndPoint.Port,
-                            State = tcpConnection.State.ToString(),
-                            Protocol = "TCP"
-                        };
-
-                        // Intentar obtener el proceso asociado a esta conexión
-                        connection.ProcessId = GetProcessIdForTcpConnection(tcpConnection);
-
-                        if (connection.ProcessId > 0)
-                        {
-                            try
-                            {
-                                Process process = Process.GetProcessById(connection.ProcessId);
-                                connection.ProcessName = process.ProcessName;
-                            }
-                            catch
-                            {
-                                connection.ProcessName = "Unknown";
-                            }
-                        }
-
-                        connections.Add(connection);
-                    }
-                    catch
-                    {
-                        // Ignorar errores en conexiones individuales
-                    }
-                }
-
-                // Conexiones UDP (solo puertos escuchando)
-                IPEndPoint[] udpListeners = properties.GetActiveUdpListeners();
-                foreach (IPEndPoint udpListener in udpListeners)
-                {
-                    try
-                    {
-                        NetworkConnection connection = new NetworkConnection
-                        {
-                            LocalAddress = udpListener.Address.ToString(),
-                            LocalPort = udpListener.Port,
-                            RemoteAddress = "0.0.0.0",
-                            RemotePort = 0,
-                            State = "Listening",
-                            Protocol = "UDP"
-                        };
-
-                        // Nota: no es fácil obtener el PID para listeners UDP sin P/Invoke
-
-                        connections.Add(connection);
-                    }
-                    catch
-                    {
-                        // Ignorar errores en conexiones individuales
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error obteniendo conexiones de red: {ex.Message}");
-            }
-
-            return connections;
-        }
-
-        private int GetProcessIdForTcpConnection(TcpConnectionInformation tcpConnection)
-        {
-            try
-            {
-                // Usar netstat para obtener el PID
-                using (Process process = new Process())
-                {
-                    ProcessStartInfo startInfo = new ProcessStartInfo
-                    {
-                        FileName = "netstat",
-                        Arguments = "-ano",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        CreateNoWindow = true
-                    };
-
-                    process.StartInfo = startInfo;
-                    process.Start();
-
-                    string output = process.StandardOutput.ReadToEnd();
-                    process.WaitForExit();
-
-                    // Buscar la línea que coincide con nuestra conexión
-                    string localEp = $"{tcpConnection.LocalEndPoint.Address}:{tcpConnection.LocalEndPoint.Port}";
-                    string remoteEp = $"{tcpConnection.RemoteEndPoint.Address}:{tcpConnection.RemoteEndPoint.Port}";
-
-                    string[] lines = output.Split('\n');
-                    foreach (string line in lines)
-                    {
-                        if (line.Contains("TCP") && line.Contains(localEp.Replace("::1", "127.0.0.1")) &&
-                            line.Contains(remoteEp.Replace("::1", "127.0.0.1")))
-                        {
-                            string[] parts = line.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length >= 5)
-                            {
-                                if (int.TryParse(parts[4], out int pid))
-                                {
-                                    return pid;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // Ignorar errores
-            }
-
-            return -1;
-        }
-
-        public List<DriverInfo> GetLoadedDrivers()
-        {
-            List<DriverInfo> drivers = new List<DriverInfo>();
-
-            try
-            {
-                using (var searcher = new ManagementObjectSearcher(
-                    "SELECT * FROM Win32_SystemDriver"))
-                {
-                    foreach (var driver in searcher.Get())
-                    {
-                        try
-                        {
-                            string name = driver["Name"]?.ToString() ?? "Unknown";
-                            string displayName = driver["DisplayName"]?.ToString() ?? "";
-                            string description = driver["Description"]?.ToString() ?? "";
-                            string pathName = driver["PathName"]?.ToString() ?? "";
-                            string startType = driver["StartMode"]?.ToString() ?? "";
-                            string state = driver["State"]?.ToString() ?? "";
-
-                            DriverInfo driverInfo = new DriverInfo
-                            {
-                                Name = name,
-                                DisplayName = displayName,
-                                Description = description,
-                                PathName = pathName,
-                                StartType = startType,
-                                State = state,
-                                // Verificar firma - simplificado
-                                IsSigned = !string.IsNullOrEmpty(pathName) && IsFileSigned(pathName)
-                            };
-
-                            drivers.Add(driverInfo);
-                        }
-                        catch
-                        {
-                            // Ignorar errores en drivers individuales
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error obteniendo drivers: {ex.Message}");
-            }
-
-            return drivers;
-        }
-
-        private bool IsFileSigned(string filePath)
-        {
-            try
-            {
-                // Simplificado: en una implementación real se usaría WinVerifyTrust
-                FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(filePath);
-                return !string.IsNullOrEmpty(versionInfo.CompanyName);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
         private string GetLastBootTime()
         {
             try
@@ -681,6 +768,69 @@ namespace AntiCheatClient.Core.Services
 
             // Si no se puede clasificar como externo o de confianza
             return Core.Config.Constants.DeviceTypes.Unknown;
+        }
+
+        public List<DriverInfo> GetLoadedDrivers()
+        {
+            List<DriverInfo> drivers = new List<DriverInfo>();
+
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher(
+                    "SELECT * FROM Win32_SystemDriver"))
+                {
+                    foreach (var driver in searcher.Get())
+                    {
+                        try
+                        {
+                            string name = driver["Name"]?.ToString() ?? "Unknown";
+                            string displayName = driver["DisplayName"]?.ToString() ?? "";
+                            string description = driver["Description"]?.ToString() ?? "";
+                            string pathName = driver["PathName"]?.ToString() ?? "";
+                            string startType = driver["StartMode"]?.ToString() ?? "";
+                            string state = driver["State"]?.ToString() ?? "";
+
+                            DriverInfo driverInfo = new DriverInfo
+                            {
+                                Name = name,
+                                DisplayName = displayName,
+                                Description = description,
+                                PathName = pathName,
+                                StartType = startType,
+                                State = state,
+                                // Verificar firma - simplificado
+                                IsSigned = !string.IsNullOrEmpty(pathName) && IsFileSigned(pathName)
+                            };
+
+                            drivers.Add(driverInfo);
+                        }
+                        catch
+                        {
+                            // Ignorar errores en drivers individuales
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error obteniendo drivers: {ex.Message}");
+            }
+
+            return drivers;
+        }
+
+        private bool IsFileSigned(string filePath)
+        {
+            try
+            {
+                // Simplificado: en una implementación real se usaría WinVerifyTrust
+                FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(filePath);
+                return !string.IsNullOrEmpty(versionInfo.CompanyName);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
