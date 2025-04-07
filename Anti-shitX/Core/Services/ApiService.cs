@@ -8,6 +8,7 @@ using AntiCheatClient.Core.Models;
 using AntiCheatClient.Core.Config;
 using System.Diagnostics;
 using System.Windows;
+using System.Linq;
 
 namespace AntiCheatClient.Core.Services
 {
@@ -251,21 +252,113 @@ namespace AntiCheatClient.Core.Services
                     return false;
                 }
 
-                // Crear objeto con la estructura exacta que espera el servidor
+                // Transformar procesos para asegurar que usan el formato camelCase esperado por el servidor
+                var processesFormatted = data.Processes.Select(p => new
+                {
+                    name = p.Name,
+                    id = p.Pid,  // Cambiar pid a id
+                    filePath = p.FilePath,
+                    fileHash = p.FileHash,
+                    commandLine = p.CommandLine,
+                    fileVersion = p.FileVersion,
+                    isSigned = p.IsSigned,
+                    signatureInfo = p.SignatureInfo,
+                    memoryUsage = p.MemoryUsage,
+                    startTime = p.StartTime
+                }).ToList();
+
+                // Transformar dispositivos USB
+                var usbDevicesFormatted = data.UsbDevices.Select(d => new
+                {
+                    deviceId = d.DeviceId,
+                    name = d.Name,
+                    description = d.Description,
+                    manufacturer = d.Manufacturer,
+                    type = d.Type,
+                    status = d.Status,
+                    connectionStatus = d.ConnectionStatus,
+                    deviceClass = d.DeviceClass,
+                    classGuid = d.ClassGuid,
+                    driver = d.Driver,
+                    hardwareId = d.HardwareId,
+                    locationInfo = d.LocationInfo,
+                    trustLevel = d.TrustLevel
+                }).ToList();
+
+                // Transformar hardware info
+                var hardwareInfoFormatted = new
+                {
+                    cpu = data.HardwareInfo.Cpu,
+                    gpu = data.HardwareInfo.Gpu,
+                    gpuDriverVersion = data.HardwareInfo.GpuDriverVersion,
+                    ram = data.HardwareInfo.Ram,
+                    motherboard = data.HardwareInfo.Motherboard,
+                    storage = data.HardwareInfo.Storage,
+                    networkAdapters = data.HardwareInfo.NetworkAdapters,
+                    audioDevices = data.HardwareInfo.AudioDevices,
+                    biosVersion = data.HardwareInfo.BiosVersion,
+                    hardwareId = data.HardwareInfo.HardwareId
+                };
+
+                // Transformar system info
+                var systemInfoFormatted = new
+                {
+                    windowsVersion = data.SystemInfo.WindowsVersion,
+                    directXVersion = data.SystemInfo.DirectXVersion,
+                    gpuDriverVersion = data.SystemInfo.GpuDriverVersion,
+                    screenResolution = data.SystemInfo.ScreenResolution,
+                    windowsUsername = data.SystemInfo.WindowsUsername,
+                    computerName = data.SystemInfo.ComputerName,
+                    windowsInstallDate = data.SystemInfo.WindowsInstallDate,
+                    lastBootTime = data.SystemInfo.LastBootTime,
+                    firmwareType = data.SystemInfo.FirmwareType,
+                    languageSettings = data.SystemInfo.LanguageSettings,
+                    timeZone = data.SystemInfo.TimeZone,
+                    frameworkVersion = data.SystemInfo.FrameworkVersion
+                };
+
+                // Transformar conexiones de red
+                var networkConnectionsFormatted = data.NetworkConnections.Select(n => new
+                {
+                    localAddress = n.LocalAddress,
+                    localPort = n.LocalPort,
+                    remoteAddress = n.RemoteAddress,
+                    remotePort = n.RemotePort,
+                    protocol = n.Protocol,
+                    state = n.State,
+                    processId = n.ProcessId,
+                    processName = n.ProcessName
+                }).ToList();
+
+                // Transformar drivers cargados
+                var loadedDriversFormatted = data.LoadedDrivers.Select(d => new
+                {
+                    name = d.Name,
+                    displayName = d.DisplayName,
+                    description = d.Description,
+                    pathName = d.PathName,
+                    version = d.Version,
+                    isSigned = d.IsSigned,
+                    signatureInfo = d.SignatureInfo,
+                    startType = d.StartType,
+                    state = d.State
+                }).ToList();
+
+                // Crear objeto con la estructura exacta que espera el servidor, usando camelCase
                 var requestData = new
                 {
-                    activisionId = data.ActivisionId,  // Nota: case sensitive, debe ser camelCase
-                    channelId = data.ChannelId,        // Nota: case sensitive, debe ser camelCase
+                    activisionId = data.ActivisionId,
+                    channelId = data.ChannelId,
                     timestamp = data.Timestamp,
                     clientStartTime = data.ClientStartTime,
                     pcStartTime = data.PcStartTime,
                     isGameRunning = data.IsGameRunning,
-                    processes = data.Processes,
-                    usbDevices = data.UsbDevices,
-                    hardwareInfo = data.HardwareInfo,  // Asegúrate de incluir esto
-                    systemInfo = data.SystemInfo,      // Asegúrate de incluir esto
-                    networkConnections = data.NetworkConnections,
-                    loadedDrivers = data.LoadedDrivers
+                    processes = processesFormatted,
+                    usbDevices = usbDevicesFormatted,
+                    hardwareInfo = hardwareInfoFormatted,
+                    systemInfo = systemInfoFormatted,
+                    networkConnections = networkConnectionsFormatted,
+                    loadedDrivers = loadedDriversFormatted
                 };
 
                 string json = JsonConvert.SerializeObject(requestData);
