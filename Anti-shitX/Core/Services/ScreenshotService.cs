@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using AntiCheatClient.Core.Config;
+using System.Timers;
 using System.Diagnostics;
 
 namespace AntiCheatClient.Core.Services
@@ -12,106 +13,92 @@ namespace AntiCheatClient.Core.Services
     public class ScreenshotService
     {
         private readonly ApiService _apiService;
+        private System.Timers.Timer _checkTimer;
         public event EventHandler<string> ScreenshotTaken;
 
         public ScreenshotService(ApiService apiService)
         {
             _apiService = apiService;
+
+            // Initialize timer for checking screenshot requests
+            _checkTimer = new System.Timers.Timer(5000); // Check every 5 seconds
+            _checkTimer.Elapsed += CheckForScreenshotRequests;
+            _checkTimer.AutoReset = true;
+            _checkTimer.Start();
         }
 
         public async Task<bool> CaptureAndSendScreenshot(string activisionId, int channelId)
         {
             try
             {
-                Debug.WriteLine($"[ScreenshotService] Iniciando captura para {activisionId}, canal {channelId}");
-
+                Debug.WriteLine($"Starting screenshot capture for {activisionId}, channel {channelId}");
                 string base64Screenshot = CaptureScreenshotAsBase64();
 
                 if (string.IsNullOrEmpty(base64Screenshot))
                 {
-                    Debug.WriteLine("[ScreenshotService] Error: Captura vacía o fallida");
-                    ScreenshotTaken?.Invoke(this, "Error: No se pudo capturar la pantalla");
+                    Debug.WriteLine("Screenshot capture failed - empty result");
                     return false;
                 }
 
-                Debug.WriteLine($"[ScreenshotService] Captura exitosa, longitud base64: {base64Screenshot.Length}");
+                Debug.WriteLine("Screenshot captured successfully, sending to server");
+                bool result = await _apiService.SendScreenshot(activisionId, channelId, base64Screenshot);
 
-                // Intentar enviar al servidor hasta 3 veces
-                bool sent = false;
-                Exception lastException = null;
-
-                for (int attempt = 1; attempt <= 3 && !sent; attempt++)
+                if (result)
                 {
-                    try
-                    {
-                        Debug.WriteLine($"[ScreenshotService] Intento {attempt} de enviar captura al servidor");
-                        bool result = await _apiService.SendScreenshot(activisionId, channelId, base64Screenshot);
-
-                        if (result)
-                        {
-                            Debug.WriteLine("[ScreenshotService] Captura enviada exitosamente");
-                            ScreenshotTaken?.Invoke(this, "Screenshot enviado correctamente");
-                            return true;
-                        }
-                        else
-                        {
-                            Debug.WriteLine($"[ScreenshotService] Error en intento {attempt}: Respuesta fallida del servidor");
-                            await Task.Delay(1000 * attempt); // Esperar más tiempo en cada reintento
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        lastException = ex;
-                        Debug.WriteLine($"[ScreenshotService] Excepción en intento {attempt}: {ex.Message}");
-                        await Task.Delay(1000 * attempt);
-                    }
+                    Debug.WriteLine("Screenshot sent successfully");
+                    ScreenshotTaken?.Invoke(this, "Screenshot enviado correctamente");
+                }
+                else
+                {
+                    Debug.WriteLine("Failed to send screenshot to server");
+                    ScreenshotTaken?.Invoke(this, "Error al enviar screenshot al servidor");
                 }
 
-                // Si llegamos aquí, fallaron todos los intentos
-                string errorMessage = lastException != null
-                    ? $"Error al enviar captura: {lastException.Message}"
-                    : "Error al enviar captura: el servidor rechazó la solicitud";
-
-                Debug.WriteLine($"[ScreenshotService] {errorMessage}");
-                ScreenshotTaken?.Invoke(this, errorMessage);
-
-                // Guardar localmente en caso de fallo
-                try
-                {
-                    string tempPath = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        "AntiCheatClient",
-                        "FailedScreenshots"
-                    );
-
-                    if (!Directory.Exists(tempPath))
-                    {
-                        Directory.CreateDirectory(tempPath);
-                    }
-
-                    string filename = $"screenshot_{activisionId}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-                    string fullPath = Path.Combine(tempPath, filename);
-
-                    Debug.WriteLine($"[ScreenshotService] Guardando captura fallida en: {fullPath}");
-
-                    // Convertir base64 a archivo
-                    byte[] imageBytes = Convert.FromBase64String(base64Screenshot.Split(',')[1]);
-                    File.WriteAllBytes(fullPath, imageBytes);
-
-                    ScreenshotTaken?.Invoke(this, $"Captura guardada localmente en: {fullPath}");
-                }
-                catch (Exception saveEx)
-                {
-                    Debug.WriteLine($"[ScreenshotService] Error al guardar captura local: {saveEx.Message}");
-                }
-
-                return false;
+                return result;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ScreenshotService] Error general en CaptureAndSendScreenshot: {ex.Message}");
+                Debug.WriteLine($"Error during screenshot capture and send: {ex.Message}");
                 ScreenshotTaken?.Invoke(this, $"Error al capturar pantalla: {ex.Message}");
                 return false;
+            }
+        }
+
+        private async void CheckForScreenshotRequests(object sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                // Prevent timer overlap if previous check is still running
+                _checkTimer.Stop();
+
+                if (UI.Windows.MainOverlay.CurrentActivisionId == null ||
+                    UI.Windows.MainOverlay.CurrentChannelId <= 0)
+                {
+                    Debug.WriteLine("Cannot check for screenshot requests - missing player info");
+                    return;
+                }
+
+                Debug.WriteLine("Checking for pending screenshot requests...");
+                bool hasRequest = await _apiService.CheckScreenshotRequests(
+                    UI.Windows.MainOverlay.CurrentActivisionId,
+                    UI.Windows.MainOverlay.CurrentChannelId);
+
+                if (hasRequest)
+                {
+                    Debug.WriteLine("Screenshot request detected! Taking screenshot...");
+                    await CaptureAndSendScreenshot(
+                        UI.Windows.MainOverlay.CurrentActivisionId,
+                        UI.Windows.MainOverlay.CurrentChannelId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error checking for screenshot requests: {ex.Message}");
+            }
+            finally
+            {
+                // Restart timer
+                _checkTimer.Start();
             }
         }
 
@@ -119,51 +106,45 @@ namespace AntiCheatClient.Core.Services
         {
             try
             {
-                Debug.WriteLine("[ScreenshotService] Capturando pantalla...");
-
-                // Determinar el tamaño total de todas las pantallas
+                // Determine the total size of all screens
                 System.Drawing.Rectangle totalSize = GetTotalScreenBounds();
 
-                Debug.WriteLine($"[ScreenshotService] Tamaño de captura: {totalSize.Width}x{totalSize.Height}");
-
-                // Crear bitmap para almacenar la captura
+                // Create bitmap to store the capture
                 using (Bitmap bmp = new Bitmap(totalSize.Width, totalSize.Height))
                 {
-                    // Crear un contexto gráfico
+                    // Create a graphics context
                     using (Graphics g = Graphics.FromImage(bmp))
                     {
-                        // Capturar pantalla(s)
+                        // Capture screen(s)
                         g.CopyFromScreen(totalSize.Left, totalSize.Top, 0, 0, totalSize.Size);
                     }
 
-                    // Convertir a base64
+                    // Convert to base64
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        // Usar compresión JPEG para reducir tamaño
+                        // Use JPEG compression to reduce size
                         EncoderParameters encoderParams = new EncoderParameters(1);
-                        encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 85L); // 85% de calidad
+                        encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 85L); // 85% quality
 
                         ImageCodecInfo jpegEncoder = GetEncoderInfo("image/jpeg");
                         bmp.Save(ms, jpegEncoder, encoderParams);
 
                         byte[] bytes = ms.ToArray();
-                        Debug.WriteLine($"[ScreenshotService] Tamaño de imagen: {bytes.Length / 1024} KB");
 
-                        // Verificar tamaño máximo
+                        // Check maximum size
                         if (bytes.Length > AppSettings.MaxScreenshotSize)
                         {
-                            Debug.WriteLine("[ScreenshotService] Imagen demasiado grande, reduciendo calidad");
+                            // Reduce quality if too large
                             return CaptureScreenshotWithReducedQuality();
                         }
 
-                        string base64 = Convert.ToBase64String(bytes);
-                        return "data:image/jpeg;base64," + base64; // Formato correcto para API
+                        return Convert.ToBase64String(bytes);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ScreenshotService] Error al capturar pantalla: {ex.Message}");
+                Debug.WriteLine($"Error capturing screenshot: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -172,7 +153,7 @@ namespace AntiCheatClient.Core.Services
         {
             try
             {
-                // Similar a CaptureScreenshotAsBase64, pero con calidad más baja
+                // Similar to CaptureScreenshotAsBase64, but with lower quality
                 System.Drawing.Rectangle totalSize = GetTotalScreenBounds();
 
                 using (Bitmap bmp = new Bitmap(totalSize.Width, totalSize.Height))
@@ -184,22 +165,20 @@ namespace AntiCheatClient.Core.Services
 
                     using (MemoryStream ms = new MemoryStream())
                     {
-                        // Usar calidad más baja, 50%
+                        // Use lower quality, 50%
                         EncoderParameters encoderParams = new EncoderParameters(1);
                         encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 50L);
 
                         ImageCodecInfo jpegEncoder = GetEncoderInfo("image/jpeg");
                         bmp.Save(ms, jpegEncoder, encoderParams);
 
-                        Debug.WriteLine($"[ScreenshotService] Tamaño de imagen reducida: {ms.Length / 1024} KB");
-
-                        return "data:image/jpeg;base64," + Convert.ToBase64String(ms.ToArray());
+                        return Convert.ToBase64String(ms.ToArray());
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ScreenshotService] Error en captura con calidad reducida: {ex.Message}");
+                Debug.WriteLine($"Error capturing screenshot with reduced quality: {ex.Message}");
                 return string.Empty;
             }
         }

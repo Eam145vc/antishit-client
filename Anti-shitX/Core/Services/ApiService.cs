@@ -28,17 +28,17 @@ namespace AntiCheatClient.Core.Services
 
             var handler = new HttpClientHandler
             {
-                // Para depuración, aceptar cualquier certificado
+                // For debugging, accept any certificate
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
 
             _httpClient = new HttpClient(handler);
             _httpClient.Timeout = TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds);
 
-            Debug.WriteLine($"ApiService inicializado con URL: {_baseUrl}");
-            Console.WriteLine($"ApiService inicializado con URL: {_baseUrl}");
+            Debug.WriteLine($"ApiService initialized with URL: {_baseUrl}");
+            Console.WriteLine($"ApiService initialized with URL: {_baseUrl}");
 
-            // No asumimos que estamos conectados hasta probarlo
+            // Don't assume we're connected until we check
             _isConnected = false;
         }
 
@@ -55,30 +55,30 @@ namespace AntiCheatClient.Core.Services
                     _lastErrorMessage = "";
                     string endpoint = $"https://antishit-server2-0.onrender.com/";
 
-                    Debug.WriteLine($"Verificando conexión a {endpoint} (intento {attempts}/{maxAttempts})");
-                    Console.WriteLine($"Verificando conexión a {endpoint} (intento {attempts}/{maxAttempts})");
+                    Debug.WriteLine($"Checking connection to {endpoint} (attempt {attempts}/{maxAttempts})");
+                    Console.WriteLine($"Checking connection to {endpoint} (attempt {attempts}/{maxAttempts})");
 
-                    // Crear un mensaje personalizado para obtener más control
+                    // Create a custom message for more control
                     var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
 
-                    // Añadir headers para depuración
+                    // Add headers for debugging
                     request.Headers.Add("User-Agent", "AntiCheatClient/1.0");
                     request.Headers.Add("Accept", "application/json");
 
                     var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds)).Token;
 
-                    // Ejecutar la solicitud
+                    // Execute the request
                     var response = await _httpClient.SendAsync(request, cancellationToken);
 
-                    // Capturar todos los detalles relevantes
-                    string statusDetail = $"Respuesta HTTP: {(int)response.StatusCode} {response.ReasonPhrase}";
+                    // Capture all relevant details
+                    string statusDetail = $"HTTP Response: {(int)response.StatusCode} {response.ReasonPhrase}";
                     Debug.WriteLine(statusDetail);
                     Console.WriteLine(statusDetail);
 
-                    // Capturar headers de respuesta para depuración
+                    // Capture response headers for debugging
                     if (AppSettings.DebugMode)
                     {
-                        Debug.WriteLine("Headers de respuesta:");
+                        Debug.WriteLine("Response headers:");
                         foreach (var header in response.Headers)
                         {
                             Debug.WriteLine($"  {header.Key}: {string.Join(", ", header.Value)}");
@@ -90,26 +90,26 @@ namespace AntiCheatClient.Core.Services
 
                     if (!newStatus)
                     {
-                        _lastErrorMessage = $"Error HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
+                        _lastErrorMessage = $"HTTP Error {(int)response.StatusCode}: {response.ReasonPhrase}";
 
-                        // Si no es el último intento, esperar antes de reintentar
+                        // If not the last attempt, wait before retrying
                         if (attempts < maxAttempts)
                         {
-                            Debug.WriteLine($"Esperando 1 segundo antes del reintento {attempts + 1}...");
+                            Debug.WriteLine($"Waiting 1 second before retry {attempts + 1}...");
                             await Task.Delay(1000);
                             continue;
                         }
 
-                        Debug.WriteLine($"Error de conexión: {_lastErrorMessage}");
-                        Debug.WriteLine($"Contenido de respuesta: {responseContent}");
+                        Debug.WriteLine($"Connection error: {_lastErrorMessage}");
+                        Debug.WriteLine($"Response content: {responseContent}");
 
-                        // Mostrar popup detallado
+                        // Show detailed popup
                         if (AppSettings.ShowDetailedErrors)
                         {
                             await Task.Run(() => {
                                 MessageBox.Show(
-                                    $"Error de conexión al servidor: {_lastErrorMessage}\n\nURL: {endpoint}\n\nRespuesta: {responseContent}",
-                                    "Error de Conexión",
+                                    $"Error connecting to server: {_lastErrorMessage}\n\nURL: {endpoint}\n\nResponse: {responseContent}",
+                                    "Connection Error",
                                     MessageBoxButton.OK,
                                     MessageBoxImage.Error
                                 );
@@ -118,118 +118,118 @@ namespace AntiCheatClient.Core.Services
                     }
                     else
                     {
-                        Debug.WriteLine($"Conexión exitosa. Contenido: {responseContent}");
-                        Console.WriteLine("Conexión exitosa al servidor");
+                        Debug.WriteLine($"Successful connection. Content: {responseContent}");
+                        Console.WriteLine("Successfully connected to server");
                     }
 
-                    // Notificar cambio de estado solo si hay un cambio real
+                    // Notify status change only if there's an actual change
                     if (newStatus != _isConnected)
                     {
                         _isConnected = newStatus;
                         ConnectionStatusChanged?.Invoke(this, _isConnected);
 
-                        Debug.WriteLine($"Estado de conexión cambiado a: {(_isConnected ? "CONECTADO" : "DESCONECTADO")}");
-                        Console.WriteLine($"Estado de conexión cambiado a: {(_isConnected ? "CONECTADO" : "DESCONECTADO")}");
+                        Debug.WriteLine($"Connection status changed to: {(_isConnected ? "CONNECTED" : "DISCONNECTED")}");
+                        Console.WriteLine($"Connection status changed to: {(_isConnected ? "CONNECTED" : "DISCONNECTED")}");
                     }
 
                     return _isConnected;
                 }
                 catch (TaskCanceledException)
                 {
-                    _lastErrorMessage = $"Tiempo de espera agotado ({AppSettings.ApiTimeoutSeconds} segundos) al conectar con el servidor";
+                    _lastErrorMessage = $"Timeout ({AppSettings.ApiTimeoutSeconds} seconds) connecting to server";
                     Debug.WriteLine(_lastErrorMessage);
                     Console.WriteLine(_lastErrorMessage);
 
-                    // Si no es el último intento, esperar antes de reintentar
+                    // If not the last attempt, wait before retrying
                     if (attempts < maxAttempts)
                     {
-                        Debug.WriteLine($"Esperando 1 segundo antes del reintento {attempts + 1}...");
+                        Debug.WriteLine($"Waiting 1 second before retry {attempts + 1}...");
                         await Task.Delay(1000);
                         continue;
                     }
                 }
                 catch (HttpRequestException ex)
                 {
-                    // Capturar errores específicos de red
+                    // Capture specific network errors
                     string errorDetail = "";
 
                     if (ex.Message.Contains("NameResolutionFailure") || ex.Message.Contains("No such host"))
                     {
-                        errorDetail = "Error de resolución DNS. No se pudo encontrar el servidor.";
+                        errorDetail = "DNS resolution error. Could not find the server.";
                     }
                     else if (ex.Message.Contains("ConnectFailure") || ex.Message.Contains("connection attempt failed"))
                     {
-                        errorDetail = "Error de conexión. Posiblemente el servidor está caído o hay un problema de red.";
+                        errorDetail = "Connection error. The server may be down or there's a network problem.";
                     }
                     else if (ex.Message.Contains("ssl") || ex.Message.Contains("SSL") || ex.Message.Contains("TLS"))
                     {
-                        errorDetail = "Error de SSL/TLS. Hay un problema con la seguridad de la conexión.";
+                        errorDetail = "SSL/TLS error. There's a problem with the connection security.";
                     }
                     else
                     {
                         errorDetail = ex.Message;
                     }
 
-                    _lastErrorMessage = $"Error de red: {errorDetail}";
-                    Debug.WriteLine($"Error tipo: {ex.GetType().Name}");
-                    Debug.WriteLine($"Error al conectar: {ex.Message}");
+                    _lastErrorMessage = $"Network error: {errorDetail}";
+                    Debug.WriteLine($"Error type: {ex.GetType().Name}");
+                    Debug.WriteLine($"Error connecting: {ex.Message}");
 
-                    // Si no es el último intento, esperar antes de reintentar
+                    // If not the last attempt, wait before retrying
                     if (attempts < maxAttempts)
                     {
-                        Debug.WriteLine($"Esperando 1 segundo antes del reintento {attempts + 1}...");
+                        Debug.WriteLine($"Waiting 1 second before retry {attempts + 1}...");
                         await Task.Delay(1000);
                         continue;
                     }
 
-                    // Mostrar detalles de error interno
+                    // Show inner exception details
                     if (ex.InnerException != null)
                     {
                         Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
                         Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                        _lastErrorMessage += $"\nDetalle: {ex.InnerException.Message}";
+                        _lastErrorMessage += $"\nDetail: {ex.InnerException.Message}";
                     }
                 }
                 catch (Exception ex)
                 {
-                    _lastErrorMessage = $"Error inesperado: {ex.GetType().Name} - {ex.Message}";
-                    Debug.WriteLine($"Error tipo: {ex.GetType().Name}");
-                    Debug.WriteLine($"Error al conectar: {ex.Message}");
+                    _lastErrorMessage = $"Unexpected error: {ex.GetType().Name} - {ex.Message}";
+                    Debug.WriteLine($"Error type: {ex.GetType().Name}");
+                    Debug.WriteLine($"Error connecting: {ex.Message}");
                     Debug.WriteLine($"StackTrace: {ex.StackTrace}");
 
-                    // Si no es el último intento, esperar antes de reintentar
+                    // If not the last attempt, wait before retrying
                     if (attempts < maxAttempts)
                     {
-                        Debug.WriteLine($"Esperando 1 segundo antes del reintento {attempts + 1}...");
+                        Debug.WriteLine($"Waiting 1 second before retry {attempts + 1}...");
                         await Task.Delay(1000);
                         continue;
                     }
 
-                    // Mostrar detalles de error interno
+                    // Show inner exception details
                     if (ex.InnerException != null)
                     {
                         Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
                         Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                        _lastErrorMessage += $"\nDetalle: {ex.InnerException.Message}";
+                        _lastErrorMessage += $"\nDetail: {ex.InnerException.Message}";
                     }
                 }
             }
 
-            // Si llegamos aquí después de varios intentos, notificar cambio de estado
+            // If we get here after multiple attempts, notify status change
             if (_isConnected)
             {
                 _isConnected = false;
                 ConnectionStatusChanged?.Invoke(this, false);
-                Debug.WriteLine("Estado de conexión cambiado a: DESCONECTADO (después de múltiples intentos)");
+                Debug.WriteLine("Connection status changed to: DISCONNECTED (after multiple attempts)");
             }
 
-            // Mostrar popup detallado solo en el último intento fallido
+            // Show detailed popup only on the last failed attempt
             if (AppSettings.ShowDetailedErrors)
             {
                 await Task.Run(() => {
                     MessageBox.Show(
-                        $"No se pudo conectar con el servidor después de {maxAttempts} intentos.\n\nURL: {_baseUrl}/health\n\nError: {_lastErrorMessage}",
-                        "Error de Conexión",
+                        $"Could not connect to server after {maxAttempts} attempts.\n\nURL: {_baseUrl}/health\n\nError: {_lastErrorMessage}",
+                        "Connection Error",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error
                     );
@@ -243,27 +243,27 @@ namespace AntiCheatClient.Core.Services
         {
             try
             {
-                // Verificar campos obligatorios
+                // Verify required fields
                 if (string.IsNullOrEmpty(data.ActivisionId) || data.ChannelId <= 0)
                 {
-                    _lastErrorMessage = "Error: ActivisionId y ChannelId son obligatorios";
+                    _lastErrorMessage = "Error: ActivisionId and ChannelId are required";
                     Console.WriteLine(_lastErrorMessage);
                     return false;
                 }
 
-                // Crear objeto con la estructura exacta que espera el servidor
+                // Create object with the exact structure expected by the server
                 var requestData = new
                 {
-                    activisionId = data.ActivisionId,  // Nota: case sensitive, debe ser camelCase
-                    channelId = data.ChannelId,        // Nota: case sensitive, debe ser camelCase
+                    activisionId = data.ActivisionId,  // Note: case sensitive, must be camelCase
+                    channelId = data.ChannelId,        // Note: case sensitive, must be camelCase
                     timestamp = data.Timestamp,
                     clientStartTime = data.ClientStartTime,
                     pcStartTime = data.PcStartTime,
                     isGameRunning = data.IsGameRunning,
                     processes = data.Processes,
                     usbDevices = data.UsbDevices,
-                    hardwareInfo = data.HardwareInfo,  // Asegúrate de incluir esto
-                    systemInfo = data.SystemInfo,      // Asegúrate de incluir esto
+                    hardwareInfo = data.HardwareInfo,  // Make sure to include this
+                    systemInfo = data.SystemInfo,      // Make sure to include this
                     networkConnections = data.NetworkConnections,
                     loadedDrivers = data.LoadedDrivers
                 };
@@ -271,13 +271,13 @@ namespace AntiCheatClient.Core.Services
                 string json = JsonConvert.SerializeObject(requestData);
                 if (AppSettings.DebugMode)
                 {
-                    Debug.WriteLine($"Enviando datos: {json.Substring(0, Math.Min(json.Length, 200))}..."); // Log para depuración (primeros 200 caracteres)
+                    Debug.WriteLine($"Sending data: {json.Substring(0, Math.Min(json.Length, 200))}..."); // Debug log (first 200 chars)
                 }
-                Console.WriteLine($"Enviando datos al endpoint {_baseUrl}/monitor");
+                Console.WriteLine($"Sending data to endpoint {_baseUrl}/monitor");
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                // Usar un CancellationToken para controlar el timeout
+                // Use a CancellationToken to control the timeout
                 var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds)).Token;
 
                 var response = await _httpClient.PostAsync($"{_baseUrl}/monitor", content, cancellationToken);
@@ -285,45 +285,45 @@ namespace AntiCheatClient.Core.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     string responseContent = await response.Content.ReadAsStringAsync();
-                    _lastErrorMessage = $"Error del servidor: {(int)response.StatusCode} {response.ReasonPhrase}";
+                    _lastErrorMessage = $"Server error: {(int)response.StatusCode} {response.ReasonPhrase}";
                     Debug.WriteLine(_lastErrorMessage);
-                    Debug.WriteLine($"Detalle de error: {responseContent}");
+                    Debug.WriteLine($"Error detail: {responseContent}");
                     Console.WriteLine(_lastErrorMessage);
 
-                    // Si obtenemos un error 401/403/407, podría ser un problema de autenticación
+                    // If we get a 401/403/407 error, it could be an authentication problem
                     if ((int)response.StatusCode == 401 || (int)response.StatusCode == 403 || (int)response.StatusCode == 407)
                     {
-                        _lastErrorMessage += "\nPosible problema de autenticación o autorización con el servidor.";
+                        _lastErrorMessage += "\nPossible authentication or authorization problem with the server.";
                     }
-                    // Si es un error 404, la URL podría estar mal
+                    // If it's a 404 error, the URL could be wrong
                     else if ((int)response.StatusCode == 404)
                     {
-                        _lastErrorMessage += "\nEndpoint no encontrado. Verifica la URL del API.";
+                        _lastErrorMessage += "\nEndpoint not found. Verify the API URL.";
                     }
-                    // Si es un error 5xx, es un problema del servidor
+                    // If it's a 5xx error, it's a server problem
                     else if ((int)response.StatusCode >= 500)
                     {
-                        _lastErrorMessage += "\nError interno del servidor. Contacta al administrador.";
+                        _lastErrorMessage += "\nInternal server error. Contact the administrator.";
                     }
                 }
                 else
                 {
-                    Debug.WriteLine("Datos enviados correctamente");
-                    Console.WriteLine("Datos enviados correctamente");
+                    Debug.WriteLine("Data sent successfully");
+                    Console.WriteLine("Data sent successfully");
                 }
 
                 return response.IsSuccessStatusCode;
             }
             catch (TaskCanceledException)
             {
-                _lastErrorMessage = $"Tiempo de espera agotado ({AppSettings.ApiTimeoutSeconds} segundos) al enviar datos al servidor";
+                _lastErrorMessage = $"Timeout ({AppSettings.ApiTimeoutSeconds} seconds) sending data to server";
                 Debug.WriteLine(_lastErrorMessage);
                 Console.WriteLine(_lastErrorMessage);
                 return false;
             }
             catch (HttpRequestException ex)
             {
-                _lastErrorMessage = $"Error de red enviando datos: {ex.Message}";
+                _lastErrorMessage = $"Network error sending data: {ex.Message}";
                 Debug.WriteLine(_lastErrorMessage);
                 Console.WriteLine(_lastErrorMessage);
                 if (ex.InnerException != null)
@@ -334,7 +334,7 @@ namespace AntiCheatClient.Core.Services
             }
             catch (Exception ex)
             {
-                _lastErrorMessage = $"Error enviando datos de monitoreo: {ex.GetType().Name} - {ex.Message}";
+                _lastErrorMessage = $"Error sending monitoring data: {ex.GetType().Name} - {ex.Message}";
                 Debug.WriteLine(_lastErrorMessage);
                 Console.WriteLine(_lastErrorMessage);
                 if (ex.InnerException != null)
@@ -349,28 +349,28 @@ namespace AntiCheatClient.Core.Services
         {
             try
             {
-                // Verificar campos obligatorios
+                // Verify required fields
                 if (string.IsNullOrEmpty(activisionId) || channelId <= 0)
                 {
-                    _lastErrorMessage = "Error: ActivisionId y ChannelId son obligatorios";
+                    _lastErrorMessage = "Error: ActivisionId and ChannelId are required";
                     Console.WriteLine(_lastErrorMessage);
                     return false;
                 }
 
                 var data = new
                 {
-                    activisionId, // Ya en camelCase
-                    channelId,    // Ya en camelCase
-                    isGameRunning // Ya en camelCase
+                    activisionId, // Already camelCase
+                    channelId,    // Already camelCase
+                    isGameRunning // Already camelCase
                 };
 
                 string json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                Debug.WriteLine($"Enviando estado del juego a {_baseUrl}/game-status");
-                Console.WriteLine($"Enviando estado del juego a {_baseUrl}/game-status");
+                Debug.WriteLine($"Sending game status to {_baseUrl}/game-status");
+                Console.WriteLine($"Sending game status to {_baseUrl}/game-status");
 
-                // Usar un CancellationToken para controlar el timeout
+                // Use a CancellationToken to control the timeout
                 var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds)).Token;
 
                 var response = await _httpClient.PostAsync($"{_baseUrl}/game-status", content, cancellationToken);
@@ -378,29 +378,29 @@ namespace AntiCheatClient.Core.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     string responseContent = await response.Content.ReadAsStringAsync();
-                    _lastErrorMessage = $"Error enviando estado del juego: {(int)response.StatusCode} {response.ReasonPhrase}";
+                    _lastErrorMessage = $"Error sending game status: {(int)response.StatusCode} {response.ReasonPhrase}";
                     Debug.WriteLine(_lastErrorMessage);
-                    Debug.WriteLine($"Detalle: {responseContent}");
+                    Debug.WriteLine($"Detail: {responseContent}");
                     Console.WriteLine(_lastErrorMessage);
                 }
                 else
                 {
-                    Debug.WriteLine("Estado del juego enviado correctamente");
-                    Console.WriteLine("Estado del juego enviado correctamente");
+                    Debug.WriteLine("Game status sent successfully");
+                    Console.WriteLine("Game status sent successfully");
                 }
 
                 return response.IsSuccessStatusCode;
             }
             catch (TaskCanceledException)
             {
-                _lastErrorMessage = $"Tiempo de espera agotado ({AppSettings.ApiTimeoutSeconds} segundos) al enviar estado del juego";
+                _lastErrorMessage = $"Timeout ({AppSettings.ApiTimeoutSeconds} seconds) sending game status";
                 Debug.WriteLine(_lastErrorMessage);
                 Console.WriteLine(_lastErrorMessage);
                 return false;
             }
             catch (Exception ex)
             {
-                _lastErrorMessage = $"Error enviando estado del juego: {ex.GetType().Name} - {ex.Message}";
+                _lastErrorMessage = $"Error sending game status: {ex.GetType().Name} - {ex.Message}";
                 Debug.WriteLine(_lastErrorMessage);
                 Console.WriteLine(_lastErrorMessage);
                 if (ex.InnerException != null)
@@ -415,18 +415,18 @@ namespace AntiCheatClient.Core.Services
         {
             try
             {
-                // Verificar campos obligatorios
+                // Verify required fields
                 if (string.IsNullOrEmpty(activisionId) || channelId <= 0 || string.IsNullOrEmpty(screenshotBase64))
                 {
-                    _lastErrorMessage = "Error: ActivisionId, ChannelId y screenshot son obligatorios";
+                    _lastErrorMessage = "Error: ActivisionId, ChannelId and screenshot are required";
                     Console.WriteLine(_lastErrorMessage);
                     return false;
                 }
 
                 var data = new
                 {
-                    activisionId, // Ya en camelCase
-                    channelId,    // Ya en camelCase
+                    activisionId, // Already camelCase
+                    channelId,    // Already camelCase
                     timestamp = DateTime.Now,
                     screenshot = screenshotBase64
                 };
@@ -434,40 +434,40 @@ namespace AntiCheatClient.Core.Services
                 string json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                Debug.WriteLine($"Enviando screenshot a {_baseUrl}/screenshot");
-                Console.WriteLine($"Enviando screenshot a {_baseUrl}/screenshot");
+                Debug.WriteLine($"Sending screenshot to {_baseUrl}/screenshot");
+                Console.WriteLine($"Sending screenshot to {_baseUrl}/screenshot");
 
-                // Usar un CancellationToken para controlar el timeout
-                var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds * 2)).Token; // Doble timeout para screenshots
+                // Use a CancellationToken to control the timeout
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds * 2)).Token; // Double timeout for screenshots
 
                 var response = await _httpClient.PostAsync($"{_baseUrl}/screenshot", content, cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     string responseContent = await response.Content.ReadAsStringAsync();
-                    _lastErrorMessage = $"Error enviando screenshot: {(int)response.StatusCode} {response.ReasonPhrase}";
+                    _lastErrorMessage = $"Error sending screenshot: {(int)response.StatusCode} {response.ReasonPhrase}";
                     Debug.WriteLine(_lastErrorMessage);
-                    Debug.WriteLine($"Detalle: {responseContent}");
+                    Debug.WriteLine($"Detail: {responseContent}");
                     Console.WriteLine(_lastErrorMessage);
                 }
                 else
                 {
-                    Debug.WriteLine("Screenshot enviado correctamente");
-                    Console.WriteLine("Screenshot enviado correctamente");
+                    Debug.WriteLine("Screenshot sent successfully");
+                    Console.WriteLine("Screenshot sent successfully");
                 }
 
                 return response.IsSuccessStatusCode;
             }
             catch (TaskCanceledException)
             {
-                _lastErrorMessage = $"Tiempo de espera agotado ({AppSettings.ApiTimeoutSeconds * 2} segundos) al enviar screenshot";
+                _lastErrorMessage = $"Timeout ({AppSettings.ApiTimeoutSeconds * 2} seconds) sending screenshot";
                 Debug.WriteLine(_lastErrorMessage);
                 Console.WriteLine(_lastErrorMessage);
                 return false;
             }
             catch (Exception ex)
             {
-                _lastErrorMessage = $"Error enviando screenshot: {ex.GetType().Name} - {ex.Message}";
+                _lastErrorMessage = $"Error sending screenshot: {ex.GetType().Name} - {ex.Message}";
                 Debug.WriteLine(_lastErrorMessage);
                 Console.WriteLine(_lastErrorMessage);
                 if (ex.InnerException != null)
@@ -476,6 +476,46 @@ namespace AntiCheatClient.Core.Services
                 }
                 return false;
             }
+        }
+
+        public async Task<bool> CheckScreenshotRequests(string activisionId, int channelId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(activisionId) || channelId <= 0)
+                {
+                    return false;
+                }
+
+                Debug.WriteLine($"Checking screenshot requests for {activisionId}, channel {channelId}");
+
+                var url = $"{_baseUrl}/screenshots/check-requests?activisionId={activisionId}&channelId={channelId}";
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;
+                var response = await _httpClient.GetAsync(url, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.WriteLine($"Error checking screenshot requests: {response.StatusCode}");
+                    return false;
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<CheckRequestResult>(content);
+
+                Debug.WriteLine($"Screenshot request check result: {result?.hasRequest}");
+                return result?.hasRequest ?? false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error checking screenshot requests: {ex.Message}");
+                return false;
+            }
+        }
+
+        private class CheckRequestResult
+        {
+            public bool hasRequest { get; set; }
+            public string message { get; set; }
         }
 
         public async Task<bool> ReportError(string errorMessage)
@@ -491,97 +531,29 @@ namespace AntiCheatClient.Core.Services
                 string json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                Debug.WriteLine($"Reportando error a {_baseUrl}/error");
+                Debug.WriteLine($"Reporting error to {_baseUrl}/error");
 
-                // Usar un CancellationToken para controlar el timeout
+                // Use a CancellationToken to control the timeout
                 var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds)).Token;
 
                 var response = await _httpClient.PostAsync($"{_baseUrl}/error", content, cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _lastErrorMessage = $"Error al reportar error: {(int)response.StatusCode} {response.ReasonPhrase}";
+                    _lastErrorMessage = $"Error reporting error: {(int)response.StatusCode} {response.ReasonPhrase}";
                     Debug.WriteLine(_lastErrorMessage);
                 }
                 else
                 {
-                    Debug.WriteLine("Error reportado correctamente");
+                    Debug.WriteLine("Error reported successfully");
                 }
 
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
-                _lastErrorMessage = $"Excepción al reportar error: {ex.GetType().Name} - {ex.Message}";
+                _lastErrorMessage = $"Exception reporting error: {ex.GetType().Name} - {ex.Message}";
                 Debug.WriteLine(_lastErrorMessage);
-                return false;
-            }
-        }
-
-        public async Task<bool> CheckScreenshotRequests(string activisionId, int channelId)
-        {
-            try
-            {
-                // Verificar campos obligatorios
-                if (string.IsNullOrEmpty(activisionId) || channelId <= 0)
-                {
-                    Debug.WriteLine("Error: activisionId y channelId son necesarios para verificar solicitudes de captura");
-                    return false;
-                }
-
-                // URL para verificar si hay solicitudes pendientes
-                string endpoint = $"{_baseUrl}/screenshots/check-requests?activisionId={activisionId}&channelId={channelId}";
-
-                Debug.WriteLine($"Verificando solicitudes de captura en {endpoint}");
-
-                // Usar un CancellationToken para controlar el timeout (tiempo más corto para esta operación)
-                var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;
-
-                var response = await _httpClient.GetAsync(endpoint, cancellationToken);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string content = await response.Content.ReadAsStringAsync();
-
-                    try
-                    {
-                        dynamic result = JsonConvert.DeserializeObject(content);
-                        bool hasRequest = result?.hasRequest == true;
-
-                        if (hasRequest)
-                        {
-                            Debug.WriteLine("Se encontró una solicitud de captura pendiente");
-                        }
-
-                        return hasRequest;
-                    }
-                    catch (Exception jsonEx)
-                    {
-                        Debug.WriteLine($"Error al procesar la respuesta JSON: {jsonEx.Message}");
-                        Debug.WriteLine($"Contenido recibido: {content}");
-                        return false;
-                    }
-                }
-                else
-                {
-                    string errorContent = await response.Content.ReadAsStringAsync();
-                    Debug.WriteLine($"Error al verificar solicitudes de captura: {(int)response.StatusCode} - {response.ReasonPhrase}");
-                    Debug.WriteLine($"Contenido de error: {errorContent}");
-                    return false;
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                Debug.WriteLine("Tiempo de espera agotado al verificar solicitudes de captura");
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error verificando solicitudes de captura: {ex.GetType().Name} - {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                }
                 return false;
             }
         }
