@@ -18,15 +18,21 @@
         public static bool DebugMode { get; set; } = true;
 
         // Omitir verificación de API - activar esta opción si el API no está disponible
-        public static bool SkipApiVerification { get; set; } = true;
+        public static bool SkipApiVerification { get; set; } = false; // Cambiado a false para forzar conexión
 
         // Timeout del API en segundos
-        public static int ApiTimeoutSeconds { get; set; } = 5;
+        public static int ApiTimeoutSeconds { get; set; } = 10; // Aumentado para dar más tiempo
 
         // Número de reintentos de conexión
         public static int ConnectionRetries { get; set; } = 3;
 
         // Mostrar errores detallados al usuario
         public static bool ShowDetailedErrors { get; set; } = true;
+
+        // Habilitar WebSocket para recibir comandos en tiempo real
+        public static bool EnableWebSocket { get; set; } = true;
+
+        // Intervalo de ping de WebSocket en segundos
+        public static int WebSocketPingIntervalSeconds { get; set; } = 30;
     }
 }

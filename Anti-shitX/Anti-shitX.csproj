@@ -100,6 +100,7 @@
     <Compile Include="Core\Services\ApiService.cs" />
     <Compile Include="Core\Services\MonitorService.cs" />
     <Compile Include="Core\Services\ScreenshotService.cs" />
+    <Compile Include="Core\Services\WebSocketService.cs" />
     <Compile Include="DetectionEngine\DeviceMonitor.cs" />
     <Compile Include="DetectionEngine\ProcessMonitor.cs" />
     <Compile Include="UI\Windows\AlertWindow.xaml.cs">

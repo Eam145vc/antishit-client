@@ -8,7 +8,6 @@ using AntiCheatClient.Core.Models;
 using AntiCheatClient.Core.Config;
 using System.Diagnostics;
 using System.Windows;
-using System.Linq;
 
 namespace AntiCheatClient.Core.Services
 {
@@ -252,113 +251,21 @@ namespace AntiCheatClient.Core.Services
                     return false;
                 }
 
-                // Transformar procesos para asegurar que usan el formato camelCase esperado por el servidor
-                var processesFormatted = data.Processes.Select(p => new
-                {
-                    name = p.Name,
-                    id = p.Pid,  // Cambiar pid a id
-                    filePath = p.FilePath,
-                    fileHash = p.FileHash,
-                    commandLine = p.CommandLine,
-                    fileVersion = p.FileVersion,
-                    isSigned = p.IsSigned,
-                    signatureInfo = p.SignatureInfo,
-                    memoryUsage = p.MemoryUsage,
-                    startTime = p.StartTime
-                }).ToList();
-
-                // Transformar dispositivos USB
-                var usbDevicesFormatted = data.UsbDevices.Select(d => new
-                {
-                    deviceId = d.DeviceId,
-                    name = d.Name,
-                    description = d.Description,
-                    manufacturer = d.Manufacturer,
-                    type = d.Type,
-                    status = d.Status,
-                    connectionStatus = d.ConnectionStatus,
-                    deviceClass = d.DeviceClass,
-                    classGuid = d.ClassGuid,
-                    driver = d.Driver,
-                    hardwareId = d.HardwareId,
-                    locationInfo = d.LocationInfo,
-                    trustLevel = d.TrustLevel
-                }).ToList();
-
-                // Transformar hardware info
-                var hardwareInfoFormatted = new
-                {
-                    cpu = data.HardwareInfo.Cpu,
-                    gpu = data.HardwareInfo.Gpu,
-                    gpuDriverVersion = data.HardwareInfo.GpuDriverVersion,
-                    ram = data.HardwareInfo.Ram,
-                    motherboard = data.HardwareInfo.Motherboard,
-                    storage = data.HardwareInfo.Storage,
-                    networkAdapters = data.HardwareInfo.NetworkAdapters,
-                    audioDevices = data.HardwareInfo.AudioDevices,
-                    biosVersion = data.HardwareInfo.BiosVersion,
-                    hardwareId = data.HardwareInfo.HardwareId
-                };
-
-                // Transformar system info
-                var systemInfoFormatted = new
-                {
-                    windowsVersion = data.SystemInfo.WindowsVersion,
-                    directXVersion = data.SystemInfo.DirectXVersion,
-                    gpuDriverVersion = data.SystemInfo.GpuDriverVersion,
-                    screenResolution = data.SystemInfo.ScreenResolution,
-                    windowsUsername = data.SystemInfo.WindowsUsername,
-                    computerName = data.SystemInfo.ComputerName,
-                    windowsInstallDate = data.SystemInfo.WindowsInstallDate,
-                    lastBootTime = data.SystemInfo.LastBootTime,
-                    firmwareType = data.SystemInfo.FirmwareType,
-                    languageSettings = data.SystemInfo.LanguageSettings,
-                    timeZone = data.SystemInfo.TimeZone,
-                    frameworkVersion = data.SystemInfo.FrameworkVersion
-                };
-
-                // Transformar conexiones de red
-                var networkConnectionsFormatted = data.NetworkConnections.Select(n => new
-                {
-                    localAddress = n.LocalAddress,
-                    localPort = n.LocalPort,
-                    remoteAddress = n.RemoteAddress,
-                    remotePort = n.RemotePort,
-                    protocol = n.Protocol,
-                    state = n.State,
-                    processId = n.ProcessId,
-                    processName = n.ProcessName
-                }).ToList();
-
-                // Transformar drivers cargados
-                var loadedDriversFormatted = data.LoadedDrivers.Select(d => new
-                {
-                    name = d.Name,
-                    displayName = d.DisplayName,
-                    description = d.Description,
-                    pathName = d.PathName,
-                    version = d.Version,
-                    isSigned = d.IsSigned,
-                    signatureInfo = d.SignatureInfo,
-                    startType = d.StartType,
-                    state = d.State
-                }).ToList();
-
-                // Crear objeto con la estructura exacta que espera el servidor, usando camelCase
+                // Crear objeto con la estructura exacta que espera el servidor
                 var requestData = new
                 {
-                    activisionId = data.ActivisionId,
-                    channelId = data.ChannelId,
+                    activisionId = data.ActivisionId,  // Nota: case sensitive, debe ser camelCase
+                    channelId = data.ChannelId,        // Nota: case sensitive, debe ser camelCase
                     timestamp = data.Timestamp,
                     clientStartTime = data.ClientStartTime,
                     pcStartTime = data.PcStartTime,
                     isGameRunning = data.IsGameRunning,
-                    processes = processesFormatted,
-                    usbDevices = usbDevicesFormatted,
-                    hardwareInfo = hardwareInfoFormatted,
-                    systemInfo = systemInfoFormatted,
-                    networkConnections = networkConnectionsFormatted,
-                    loadedDrivers = loadedDriversFormatted
+                    processes = data.Processes,
+                    usbDevices = data.UsbDevices,
+                    hardwareInfo = data.HardwareInfo,  // Asegúrate de incluir esto
+                    systemInfo = data.SystemInfo,      // Asegúrate de incluir esto
+                    networkConnections = data.NetworkConnections,
+                    loadedDrivers = data.LoadedDrivers
                 };
 
                 string json = JsonConvert.SerializeObject(requestData);
@@ -607,6 +514,74 @@ namespace AntiCheatClient.Core.Services
             {
                 _lastErrorMessage = $"Excepción al reportar error: {ex.GetType().Name} - {ex.Message}";
                 Debug.WriteLine(_lastErrorMessage);
+                return false;
+            }
+        }
+
+        public async Task<bool> CheckScreenshotRequests(string activisionId, int channelId)
+        {
+            try
+            {
+                // Verificar campos obligatorios
+                if (string.IsNullOrEmpty(activisionId) || channelId <= 0)
+                {
+                    Debug.WriteLine("Error: activisionId y channelId son necesarios para verificar solicitudes de captura");
+                    return false;
+                }
+
+                // URL para verificar si hay solicitudes pendientes
+                string endpoint = $"{_baseUrl}/screenshots/check-requests?activisionId={activisionId}&channelId={channelId}";
+
+                Debug.WriteLine($"Verificando solicitudes de captura en {endpoint}");
+
+                // Usar un CancellationToken para controlar el timeout (tiempo más corto para esta operación)
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token;
+
+                var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+
+                    try
+                    {
+                        dynamic result = JsonConvert.DeserializeObject(content);
+                        bool hasRequest = result?.hasRequest == true;
+
+                        if (hasRequest)
+                        {
+                            Debug.WriteLine("Se encontró una solicitud de captura pendiente");
+                        }
+
+                        return hasRequest;
+                    }
+                    catch (Exception jsonEx)
+                    {
+                        Debug.WriteLine($"Error al procesar la respuesta JSON: {jsonEx.Message}");
+                        Debug.WriteLine($"Contenido recibido: {content}");
+                        return false;
+                    }
+                }
+                else
+                {
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    Debug.WriteLine($"Error al verificar solicitudes de captura: {(int)response.StatusCode} - {response.ReasonPhrase}");
+                    Debug.WriteLine($"Contenido de error: {errorContent}");
+                    return false;
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine("Tiempo de espera agotado al verificar solicitudes de captura");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error verificando solicitudes de captura: {ex.GetType().Name} - {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 return false;
             }
         }

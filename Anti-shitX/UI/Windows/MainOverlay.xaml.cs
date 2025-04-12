@@ -1,6 +1,4 @@
-﻿// Path: Anti-shitX/UI/Windows/MainOverlay.xaml.cs
-
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -30,6 +28,7 @@ namespace AntiCheatClient.UI.Windows
 
         private DispatcherTimer _statusUpdateTimer;
         private DispatcherTimer _monitorTimer;
+        private DispatcherTimer _screenshotCheckTimer;
 
         public MainOverlay(string activisionId, int channelId)
         {
@@ -124,11 +123,91 @@ namespace AntiCheatClient.UI.Windows
                 _monitorTimer.Tick += MonitorTimer_Tick;
                 _monitorTimer.Start();
 
+                // Timer para verificar solicitudes de capturas de pantalla
+                _screenshotCheckTimer = new DispatcherTimer();
+                _screenshotCheckTimer.Interval = TimeSpan.FromSeconds(3); // Comprobar cada 3 segundos
+                _screenshotCheckTimer.Tick += ScreenshotCheckTimer_Tick;
+                _screenshotCheckTimer.Start();
+
                 Debug.WriteLine("Temporizadores iniciados correctamente");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error al inicializar temporizadores: {ex.Message}");
+            }
+        }
+
+        private async void ScreenshotCheckTimer_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                // Solo verificar si estamos conectados al servidor
+                if (_apiService.IsConnected)
+                {
+                    Debug.WriteLine("Verificando solicitudes de captura pendientes...");
+                    bool hasRequest = await _apiService.CheckScreenshotRequests(_activisionId, _channelId);
+
+                    if (hasRequest)
+                    {
+                        Debug.WriteLine("¡Se detectó una solicitud de captura pendiente!");
+
+                        // Desactivar temporalmente el timer para evitar múltiples capturas
+                        _screenshotCheckTimer.Stop();
+
+                        // Realizar la captura
+                        await TakeAndSendScreenshot();
+
+                        // Reactivar el timer después de la captura
+                        _screenshotCheckTimer.Start();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error verificando solicitudes de captura: {ex.Message}");
+            }
+        }
+
+        private async Task TakeAndSendScreenshot()
+        {
+            try
+            {
+                Debug.WriteLine("Iniciando captura de pantalla automática");
+
+                // Actualizar la UI en el hilo de la interfaz gráfica
+                Dispatcher.Invoke(() => {
+                    btnScreenshot.IsEnabled = false;
+                    btnScreenshot.Content = "Capturando...";
+                });
+
+                // Tomar y enviar la captura
+                bool result = await _screenshotService.CaptureAndSendScreenshot(_activisionId, _channelId);
+
+                // Actualizar la UI según el resultado
+                Dispatcher.Invoke(() => {
+                    btnScreenshot.Content = result ? "Enviado ✓" : "Error";
+                });
+
+                Debug.WriteLine($"Screenshot automático {(result ? "enviado correctamente" : "falló")}");
+
+                // Mostrar el estado durante unos segundos
+                await Task.Delay(2000);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error al capturar pantalla automáticamente: {ex.Message}");
+                Dispatcher.Invoke(() => {
+                    btnScreenshot.Content = "Error";
+                });
+                await Task.Delay(2000);
+            }
+            finally
+            {
+                // Restaurar el botón a su estado original
+                Dispatcher.Invoke(() => {
+                    btnScreenshot.IsEnabled = true;
+                    btnScreenshot.Content = "Capturar pantalla";
+                });
             }
         }
 
@@ -355,49 +434,6 @@ namespace AntiCheatClient.UI.Windows
             }
         }
 
-        // Añadido método faltante DiagButton_Click
-        private void DiagButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                Debug.WriteLine("Botón de diagnóstico presionado");
-
-                // Mostrar información de estado de conexión
-                string connectionStatus = _apiService.IsConnected ? "Conectado" : "Desconectado";
-                string lastError = _apiService.LastErrorMessage;
-                string apiUrl = AppSettings.ApiBaseUrl;
-                string debugMode = AppSettings.DebugMode ? "Activado" : "Desactivado";
-
-                string message = $"Estado de conexión: {connectionStatus}\n" +
-                                $"URL del API: {apiUrl}\n" +
-                                $"Modo depuración: {debugMode}\n" +
-                                $"ID Activision: {_activisionId}\n" +
-                                $"Canal: {_channelId}\n\n";
-
-                if (!string.IsNullOrEmpty(lastError))
-                {
-                    message += $"Último error: {lastError}";
-                }
-
-                MessageBox.Show(
-                    message,
-                    "Información de Diagnóstico",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information
-                );
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error en DiagButton_Click: {ex.Message}");
-                MessageBox.Show(
-                    $"Error al mostrar diagnóstico: {ex.Message}",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error
-                );
-            }
-        }
-
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine("Botón de cierre presionado");
@@ -468,6 +504,18 @@ namespace AntiCheatClient.UI.Windows
             Debug.WriteLine($"Mostrando notificación: {message}");
             // Simplemente mostrar un MessageBox por ahora
             MessageBox.Show(message, "Anti-Cheat Monitor", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        
+        private void DiagButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Mostrar ventana con información de diagnóstico
+            string diagnosticInfo = $"Estado de conexión: {(_apiService.IsConnected ? "Conectado" : "Desconectado")}\n" +
+                $"ActivisionID: {_activisionId}\n" +
+                $"Canal: {_channelId}\n" +
+                $"Tiempo activo: {(DateTime.Now - ClientStartTime).ToString(@"hh\:mm\:ss")}\n" +
+                $"Último error: {_apiService.LastErrorMessage}";
+            
+            MessageBox.Show(diagnosticInfo, "Diagnóstico del Monitor", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }
