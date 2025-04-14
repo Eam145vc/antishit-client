@@ -8,7 +8,6 @@ using AntiCheatClient.Core.Models;
 using AntiCheatClient.Core.Config;
 using System.Diagnostics;
 using System.Windows;
-using System.Net;
 
 namespace AntiCheatClient.Core.Services
 {
@@ -18,22 +17,24 @@ namespace AntiCheatClient.Core.Services
         private readonly string _baseUrl;
         private bool _isConnected;
         private string _lastErrorMessage = "";
-        private Timer _screenshotCheckTimer;
-        private string _lastActivisionId;
-        private int _lastChannelId;
 
         public bool IsConnected => _isConnected;
         public string LastErrorMessage => _lastErrorMessage;
         public event EventHandler<bool> ConnectionStatusChanged;
-        
-        // Evento para notificar cuando se recibe una solicitud de captura
-        public event EventHandler<ScreenshotRequestEventArgs> ScreenshotRequested;
 
+        // Definición de la clase ScreenshotRequestEventArgs para el evento
         public class ScreenshotRequestEventArgs : EventArgs
         {
+            public string ActivisionId { get; set; }
+            public int ChannelId { get; set; }
+            public string Source { get; set; }
             public string RequestedBy { get; set; }
             public DateTime Timestamp { get; set; }
+            public bool IsJudgeRequest { get; set; }
         }
+
+        // Evento para solicitudes de capturas de pantalla
+        public event EventHandler<ScreenshotRequestEventArgs> ScreenshotRequested;
 
         public ApiService(string baseUrl)
         {
@@ -53,95 +54,6 @@ namespace AntiCheatClient.Core.Services
 
             // No asumimos que estamos conectados hasta probarlo
             _isConnected = false;
-            
-            // Iniciar temporizador para verificar solicitudes de capturas de pantalla
-            _screenshotCheckTimer = new Timer(CheckScreenshotRequestsCallback, null, 
-                2000, // Tiempo inicial de espera (2 segundos)
-                5000); // Intervalo de verificación (5 segundos)
-        }
-
-        private async void CheckScreenshotRequestsCallback(object state)
-        {
-            try
-            {
-                // Obtener el ID de Activision y canal actual desde MainOverlay
-                string activisionId = UI.Windows.MainOverlay.CurrentActivisionId;
-                int channelId = UI.Windows.MainOverlay.CurrentChannelId;
-
-                // Si no hay ID o canal, no podemos verificar
-                if (string.IsNullOrEmpty(activisionId) || channelId <= 0)
-                {
-                    return;
-                }
-
-                // Guardar estos valores para uso en caso de error/reconexión
-                _lastActivisionId = activisionId;
-                _lastChannelId = channelId;
-
-                // Si no hay conexión, no intentar verificar
-                if (!_isConnected && !AppSettings.SkipApiVerification)
-                {
-                    return;
-                }
-
-                // Crear URL para verificar solicitudes
-                var requestUrl = $"{_baseUrl}/screenshots/check-requests?activisionId={Uri.EscapeDataString(activisionId)}&channelId={channelId}";
-                
-                Debug.WriteLine($"Verificando solicitudes de captura: {requestUrl}");
-
-                // Usar un token de cancelación para controlar el timeout
-                var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(3)).Token; // Timeout más corto para chequeos
-                
-                // Ejecutar la solicitud HTTP
-                var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    string content = await response.Content.ReadAsStringAsync();
-                    Debug.WriteLine($"Respuesta de verificación de capturas: {content}");
-                    
-                    // Deserializar respuesta
-                    var result = JsonConvert.DeserializeObject<ScreenshotCheckResponse>(content);
-                    
-                    // Si hay una solicitud pendiente, notificar
-                    if (result != null && result.HasRequest && result.RequestDetails != null)
-                    {
-                        Debug.WriteLine($"Solicitud de captura encontrada: {result.RequestDetails.RequestedBy}");
-                        Console.WriteLine($"Solicitud de captura recibida de: {result.RequestDetails.RequestedBy}");
-                        
-                        // Invocar evento para notificar la solicitud
-                        ScreenshotRequested?.Invoke(this, new ScreenshotRequestEventArgs
-                        {
-                            RequestedBy = result.RequestDetails.RequestedBy,
-                            Timestamp = result.RequestDetails.Timestamp
-                        });
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine($"Error verificando solicitudes: {response.StatusCode}");
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                Debug.WriteLine("Verificación de solicitudes cancelada por timeout");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error verificando solicitudes de captura: {ex.Message}");
-            }
-        }
-
-        private class ScreenshotCheckResponse
-        {
-            public bool HasRequest { get; set; }
-            public RequestDetailsInfo RequestDetails { get; set; }
-        }
-
-        private class RequestDetailsInfo
-        {
-            public string RequestedBy { get; set; }
-            public DateTime Timestamp { get; set; }
         }
 
         public async Task<bool> CheckConnection()
@@ -513,7 +425,7 @@ namespace AntiCheatClient.Core.Services
             }
         }
 
-        public async Task<bool> SendScreenshot(string activisionId, int channelId, string screenshotBase64)
+        public async Task<bool> SendScreenshot(string activisionId, int channelId, string screenshotBase64, string source = null)
         {
             try
             {
@@ -525,24 +437,27 @@ namespace AntiCheatClient.Core.Services
                     return false;
                 }
 
+                // Crear una estructura más explícita con la fuente incluida
                 var data = new
                 {
                     activisionId, // Ya en camelCase
                     channelId,    // Ya en camelCase
                     timestamp = DateTime.Now,
-                    screenshot = screenshotBase64
+                    screenshot = screenshotBase64,
+                    source = source ?? "user", // Incluir fuente explícitamente, por defecto 'user'
+                    isJudgeRequest = source == "judge" // Añadir bandera adicional para ser explícitos
                 };
 
                 string json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                Debug.WriteLine($"Enviando screenshot a {_baseUrl}/screenshots");
-                Console.WriteLine($"Enviando screenshot a {_baseUrl}/screenshots");
+                Debug.WriteLine($"Enviando screenshot a {_baseUrl}/screenshot");
+                Console.WriteLine($"Enviando screenshot a {_baseUrl}/screenshot (Fuente: {source ?? "user"})");
 
                 // Usar un CancellationToken para controlar el timeout
                 var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds * 2)).Token; // Doble timeout para screenshots
 
-                var response = await _httpClient.PostAsync($"{_baseUrl}/screenshots", content, cancellationToken);
+                var response = await _httpClient.PostAsync($"{_baseUrl}/screenshot", content, cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -555,7 +470,7 @@ namespace AntiCheatClient.Core.Services
                 else
                 {
                     Debug.WriteLine("Screenshot enviado correctamente");
-                    Console.WriteLine("Screenshot enviado correctamente");
+                    Console.WriteLine($"Screenshot enviado correctamente (Fuente: {source ?? "user"})");
                 }
 
                 return response.IsSuccessStatusCode;
@@ -578,6 +493,90 @@ namespace AntiCheatClient.Core.Services
                 }
                 return false;
             }
+        }
+
+        public async Task<bool> CheckScreenshotRequests(string activisionId, int channelId)
+        {
+            try
+            {
+                // Verificar campos obligatorios
+                if (string.IsNullOrEmpty(activisionId) || channelId <= 0)
+                {
+                    _lastErrorMessage = "Error: ActivisionId y ChannelId son obligatorios para verificar solicitudes";
+                    Console.WriteLine(_lastErrorMessage);
+                    return false;
+                }
+
+                Debug.WriteLine($"Verificando solicitudes de screenshot para {activisionId} (Canal {channelId})");
+
+                // Construir la URL con parámetros de consulta
+                string endpoint = $"{_baseUrl}/screenshots/check-requests?activisionId={Uri.EscapeDataString(activisionId)}&channelId={channelId}";
+
+                // Usar un CancellationToken para controlar el timeout
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(AppSettings.ApiTimeoutSeconds)).Token;
+
+                var response = await _httpClient.GetAsync(endpoint, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string responseContent = await response.Content.ReadAsStringAsync();
+                    _lastErrorMessage = $"Error verificando solicitudes: {(int)response.StatusCode} {response.ReasonPhrase}";
+                    Debug.WriteLine(_lastErrorMessage);
+                    Debug.WriteLine($"Detalle: {responseContent}");
+                    Console.WriteLine(_lastErrorMessage);
+                    return false;
+                }
+
+                // Procesar la respuesta
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<RequestCheckResponse>(jsonResponse);
+
+                if (result.HasRequest)
+                {
+                    Debug.WriteLine($"Solicitud de screenshot pendiente encontrada. Fuente: {result.RequestDetails?.Source ?? "N/A"}");
+                    Console.WriteLine($"Solicitud de screenshot pendiente encontrada. Fuente: {result.RequestDetails?.Source ?? "N/A"}");
+
+                    // Activar el evento con los detalles de la solicitud
+                    ScreenshotRequested?.Invoke(this, new ScreenshotRequestEventArgs
+                    {
+                        ActivisionId = activisionId,
+                        ChannelId = channelId,
+                        Source = result.RequestDetails?.Source ?? "judge",
+                        RequestedBy = result.RequestDetails?.RequestedBy ?? "Judge",
+                        Timestamp = result.RequestDetails?.Timestamp ?? DateTime.Now,
+                        IsJudgeRequest = result.RequestDetails?.IsJudgeRequest ?? true
+                    });
+
+                    return true;
+                }
+                else
+                {
+                    Debug.WriteLine("No hay solicitudes de screenshot pendientes");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _lastErrorMessage = $"Error verificando solicitudes de screenshot: {ex.GetType().Name} - {ex.Message}";
+                Debug.WriteLine(_lastErrorMessage);
+                Console.WriteLine(_lastErrorMessage);
+                return false;
+            }
+        }
+
+        private class RequestCheckResponse
+        {
+            public bool HasRequest { get; set; }
+            public RequestDetails RequestDetails { get; set; }
+        }
+
+        private class RequestDetails
+        {
+            public string RequestedBy { get; set; }
+            public DateTime Timestamp { get; set; }
+            public string Source { get; set; }
+            public bool IsJudgeRequest { get; set; }
+            public bool FORCE_JUDGE_TYPE { get; set; }
         }
 
         public async Task<bool> ReportError(string errorMessage)

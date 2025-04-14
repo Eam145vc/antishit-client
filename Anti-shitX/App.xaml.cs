@@ -2,6 +2,7 @@
 using System.Windows;
 using AntiCheatClient.Core.Services;
 using AntiCheatClient.Core.Config;
+using System.Threading.Tasks;
 
 namespace AntiCheatClient
 {
@@ -20,9 +21,56 @@ namespace AntiCheatClient
             _monitorService = new MonitorService(_apiService);
             _screenshotService = new ScreenshotService(_apiService);
 
+            // Configurar comprobación automática de solicitudes de capturas
+            StartCheckingScreenshotRequests();
+
             // Configurar manejo de excepciones no controladas
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
+        }
+
+        private async void StartCheckingScreenshotRequests()
+        {
+            try
+            {
+                // Esperar un poco para asegurar que todo esté inicializado
+                await Task.Delay(5000);
+
+                while (true)
+                {
+                    try
+                    {
+                        // Comprobar si hay solicitudes pendientes para el jugador actual
+                        if (!string.IsNullOrEmpty(UI.Windows.MainOverlay.CurrentActivisionId) &&
+                            UI.Windows.MainOverlay.CurrentChannelId > 0)
+                        {
+                            string activisionId = UI.Windows.MainOverlay.CurrentActivisionId;
+                            int channelId = UI.Windows.MainOverlay.CurrentChannelId;
+
+                            // Verificar si hay solicitudes pendientes
+                            bool hasRequest = await _apiService.CheckScreenshotRequests(activisionId, channelId);
+
+                            if (hasRequest)
+                            {
+                                Console.WriteLine($"Solicitud de screenshot encontrada para {activisionId}. Capturando pantalla...");
+                                // Indicar explícitamente que la fuente es "judge" para solicitudes remotas
+                                await _screenshotService.CaptureAndSendScreenshot(activisionId, channelId, "judge");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en la verificación de solicitudes de captura: {ex.Message}");
+                    }
+
+                    // Esperar antes de la próxima verificación (cada 10 segundos)
+                    await Task.Delay(10000);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error iniciando el servicio de comprobación de capturas: {ex.Message}");
+            }
         }
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

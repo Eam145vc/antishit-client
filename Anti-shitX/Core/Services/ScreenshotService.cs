@@ -12,94 +12,61 @@ namespace AntiCheatClient.Core.Services
     {
         private readonly ApiService _apiService;
         public event EventHandler<string> ScreenshotTaken;
-        private bool _isCapturing = false;
 
         public ScreenshotService(ApiService apiService)
         {
             _apiService = apiService;
-
-            // Suscribirse al evento de solicitud de captura del ApiService
-            _apiService.ScreenshotRequested += ApiService_ScreenshotRequested;
         }
 
-        private async void ApiService_ScreenshotRequested(object sender, ApiService.ScreenshotRequestEventArgs e)
+        public async Task<bool> CaptureAndSendScreenshot(string activisionId, int channelId, string source = null)
         {
             try
             {
-                // Evitar capturas simultáneas
-                if (_isCapturing)
+                Console.WriteLine($"Capturando pantalla para {activisionId} (Canal {channelId})");
+                if (!string.IsNullOrEmpty(source))
                 {
-                    Console.WriteLine("Ya hay una captura en proceso, ignorando solicitud");
-                    return;
+                    Console.WriteLine($"Fuente de solicitud: {source}");
                 }
-
-                Console.WriteLine($"Solicitud de captura recibida de: {e.RequestedBy}");
-
-                // Obtener información del jugador actual
-                string activisionId = UI.Windows.MainOverlay.CurrentActivisionId;
-                int channelId = UI.Windows.MainOverlay.CurrentChannelId;
-
-                if (string.IsNullOrEmpty(activisionId) || channelId <= 0)
-                {
-                    Console.WriteLine("No se pudo obtener información del jugador para la captura");
-                    return;
-                }
-
-                // Notificar que se está tomando la captura
-                ScreenshotTaken?.Invoke(this, $"Tomando captura solicitada por {e.RequestedBy}...");
-
-                // Tomar y enviar la captura automáticamente
-                await CaptureAndSendScreenshot(activisionId, channelId);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error procesando solicitud de captura: {ex.Message}");
-            }
-        }
-
-        public async Task<bool> CaptureAndSendScreenshot(string activisionId, int channelId)
-        {
-            if (_isCapturing)
-            {
-                ScreenshotTaken?.Invoke(this, "Ya hay una captura en proceso");
-                return false;
-            }
-
-            try
-            {
-                _isCapturing = true;
-                ScreenshotTaken?.Invoke(this, "Capturando pantalla...");
 
                 string base64Screenshot = CaptureScreenshotAsBase64();
 
                 if (string.IsNullOrEmpty(base64Screenshot))
                 {
-                    ScreenshotTaken?.Invoke(this, "Error: No se pudo capturar la pantalla");
+                    Console.WriteLine("Error: No se pudo capturar la pantalla (base64 vacío)");
                     return false;
                 }
 
-                ScreenshotTaken?.Invoke(this, "Enviando captura al servidor...");
-                bool result = await _apiService.SendScreenshot(activisionId, channelId, base64Screenshot);
+                // Enviar la captura incluyendo la fuente si se proporcionó
+                bool result = await _apiService.SendScreenshot(activisionId, channelId, base64Screenshot, source);
 
                 if (result)
                 {
-                    ScreenshotTaken?.Invoke(this, "Screenshot enviado correctamente");
+                    string messageDetail = !string.IsNullOrEmpty(source) && source == "judge"
+                        ? "solicitada por juez"
+                        : "enviada correctamente";
+                    string eventMessage = $"Screenshot {messageDetail}";
+
+                    ScreenshotTaken?.Invoke(this, eventMessage);
+                    Console.WriteLine(eventMessage);
                 }
                 else
                 {
-                    ScreenshotTaken?.Invoke(this, "Error: No se pudo enviar la captura al servidor");
+                    Console.WriteLine("Error: La API devolvió falso al enviar la captura");
                 }
 
                 return result;
             }
             catch (Exception ex)
             {
-                ScreenshotTaken?.Invoke(this, $"Error al capturar pantalla: {ex.Message}");
+                string errorMsg = $"Error al capturar pantalla: {ex.Message}";
+                Console.WriteLine(errorMsg);
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+
+                ScreenshotTaken?.Invoke(this, errorMsg);
                 return false;
-            }
-            finally
-            {
-                _isCapturing = false;
             }
         }
 
@@ -145,7 +112,7 @@ namespace AntiCheatClient.Core.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al capturar pantalla: {ex.Message}");
+                Console.WriteLine($"Error capturando screenshot: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -164,73 +131,22 @@ namespace AntiCheatClient.Core.Services
                         g.CopyFromScreen(totalSize.Left, totalSize.Top, 0, 0, totalSize.Size);
                     }
 
-                    // Reducir el tamaño de la imagen a la mitad
-                    using (Bitmap resizedBmp = new Bitmap(bmp, new Size(bmp.Width / 2, bmp.Height / 2)))
+                    using (MemoryStream ms = new MemoryStream())
                     {
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            // Usar calidad más baja, 50%
-                            EncoderParameters encoderParams = new EncoderParameters(1);
-                            encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 50L);
+                        // Usar calidad más baja, 50%
+                        EncoderParameters encoderParams = new EncoderParameters(1);
+                        encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 50L);
 
-                            ImageCodecInfo jpegEncoder = GetEncoderInfo("image/jpeg");
-                            resizedBmp.Save(ms, jpegEncoder, encoderParams);
+                        ImageCodecInfo jpegEncoder = GetEncoderInfo("image/jpeg");
+                        bmp.Save(ms, jpegEncoder, encoderParams);
 
-                            byte[] bytes = ms.ToArray();
-
-                            // Si sigue siendo demasiado grande, reducir aún más
-                            if (bytes.Length > AppSettings.MaxScreenshotSize)
-                            {
-                                // Usar un tamaño aún más pequeño y menor calidad
-                                return CaptureScreenshotWithMinimumQuality();
-                            }
-
-                            return Convert.ToBase64String(bytes);
-                        }
+                        return Convert.ToBase64String(ms.ToArray());
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al capturar pantalla con calidad reducida: {ex.Message}");
-                return string.Empty;
-            }
-        }
-
-        private string CaptureScreenshotWithMinimumQuality()
-        {
-            try
-            {
-                // Capturar con calidad mínima
-                System.Drawing.Rectangle totalSize = GetTotalScreenBounds();
-
-                using (Bitmap bmp = new Bitmap(totalSize.Width, totalSize.Height))
-                {
-                    using (Graphics g = Graphics.FromImage(bmp))
-                    {
-                        g.CopyFromScreen(totalSize.Left, totalSize.Top, 0, 0, totalSize.Size);
-                    }
-
-                    // Reducir el tamaño de la imagen a un tercio
-                    using (Bitmap resizedBmp = new Bitmap(bmp, new Size(bmp.Width / 3, bmp.Height / 3)))
-                    {
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            // Usar calidad mínima, 30%
-                            EncoderParameters encoderParams = new EncoderParameters(1);
-                            encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, 30L);
-
-                            ImageCodecInfo jpegEncoder = GetEncoderInfo("image/jpeg");
-                            resizedBmp.Save(ms, jpegEncoder, encoderParams);
-
-                            return Convert.ToBase64String(ms.ToArray());
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al capturar pantalla con calidad mínima: {ex.Message}");
+                Console.WriteLine($"Error capturando screenshot con calidad reducida: {ex.Message}");
                 return string.Empty;
             }
         }
