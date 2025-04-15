@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Management;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using AntiCheatClient.Core.Config;
 using AntiCheatClient.Core.Models;
+using AntiCheatClient.DetectionEngine;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace AntiCheatClient.DetectionEngine
 {
@@ -14,8 +17,14 @@ namespace AntiCheatClient.DetectionEngine
         private ManagementEventWatcher _insertWatcher;
         private ManagementEventWatcher _removeWatcher;
         private Timer _deviceCheckTimer;
+        private MonitorDetector _monitorDetector;
 
         public event EventHandler<DeviceChangedEventArgs> DeviceChanged;
+
+        public DeviceMonitor()
+        {
+            _monitorDetector = new MonitorDetector();
+        }
 
         public void Initialize()
         {
@@ -44,115 +53,19 @@ namespace AntiCheatClient.DetectionEngine
                     {
                         try
                         {
-                            string deviceId = device["DeviceID"]?.ToString() ?? "";
-                            string name = device["Name"]?.ToString() ?? "Unknown Device";
-                            string description = device["Description"]?.ToString() ?? "";
-                            string manufacturer = device["Manufacturer"]?.ToString() ?? "";
-                            string status = device["Status"]?.ToString() ?? "";
-                            string deviceClass = device["ClassGuid"]?.ToString() ?? "";
+                            string lowerManufacturer = manufacturer.ToLower();
 
-                            // Crear objeto de dispositivo
-                            DeviceInfo deviceInfo = new DeviceInfo
+                            foreach (string trusted in trustedManufacturers)
                             {
-                                DeviceId = deviceId,
-                                Name = name,
-                                Description = description,
-                                Manufacturer = manufacturer,
-                                Status = status,
-                                ClassGuid = deviceClass,
-                                // Clasificar dispositivo según su tipo
-                                TrustLevel = ClassifyDevice(deviceId, name, description, manufacturer)
-                            };
+                                if (lowerManufacturer.Contains(trusted))
+                                {
+                                    return Core.Config.Constants.DeviceTypes.Trusted;
+                                }
+                            }
 
-                            devices.Add(deviceInfo);
+                            // Si no se puede clasificar como externo o de confianza
+                            return Core.Config.Constants.DeviceTypes.Unknown;
                         }
-                        catch
-                        {
-                            // Ignorar errores individuales de dispositivos
-                        }
-                    }
-                }
-
-                // Obtener monitores conectados específicamente
-                using (var searcher = new ManagementObjectSearcher(
-                    "SELECT * FROM Win32_DesktopMonitor"))
-                {
-                    foreach (ManagementObject monitor in searcher.Get())
-                    {
-                        try
-                        {
-                            string deviceId = monitor["DeviceID"]?.ToString() ?? "";
-                            string name = monitor["Name"]?.ToString() ?? "Unknown Monitor";
-                            string description = monitor["Description"]?.ToString() ?? "";
-                            string status = monitor["Status"]?.ToString() ?? "";
-
-                            DeviceInfo deviceInfo = new DeviceInfo
-                            {
-                                DeviceId = deviceId,
-                                Name = name,
-                                Description = description,
-                                Status = status,
-                                Type = "Monitor",
-                                TrustLevel = Constants.DeviceTypes.Trusted
-                            };
-
-                            devices.Add(deviceInfo);
-                        }
-                        catch
-                        {
-                            // Ignorar errores individuales de dispositivos
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error obteniendo dispositivos: {ex.Message}");
-            }
-
-            return devices;
-        }
-
-        private string ClassifyDevice(string deviceId, string name, string description, string manufacturer)
-        {
-            // Lista de palabras clave para dispositivos externos/sospechosos
-            string[] externalKeywords = new string[]
-            {
-                "usb", "flash", "removable", "portable", "external", "card reader",
-                "memory stick", "sandisk", "kingston", "cruzer"
-            };
-
-            // Comprobación para dispositivos externos
-            string lowerDeviceInfo = (deviceId + " " + name + " " + description + " " + manufacturer).ToLower();
-
-            foreach (string keyword in externalKeywords)
-            {
-                if (lowerDeviceInfo.Contains(keyword))
-                {
-                    return Constants.DeviceTypes.External;
-                }
-            }
-
-            // Lista de fabricantes de confianza
-            string[] trustedManufacturers = new string[]
-            {
-                "microsoft", "intel", "amd", "nvidia", "realtek", "logitech", "dell",
-                "hp", "lenovo", "asus", "msi", "gigabyte", "corsair"
-            };
-
-            string lowerManufacturer = manufacturer.ToLower();
-
-            foreach (string trusted in trustedManufacturers)
-            {
-                if (lowerManufacturer.Contains(trusted))
-                {
-                    return Constants.DeviceTypes.Trusted;
-                }
-            }
-
-            // Si no se puede clasificar como externo o de confianza
-            return Constants.DeviceTypes.Unknown;
-        }
 
         private void SetupDeviceWatchers()
         {
@@ -317,4 +230,84 @@ namespace AntiCheatClient.DetectionEngine
             }
         }
     }
+    deviceId = device["DeviceID"]?.ToString() ?? "";
+                            string name = device["Name"]?.ToString() ?? "Unknown Device";
+    string description = device["Description"]?.ToString() ?? "";
+    string manufacturer = device["Manufacturer"]?.ToString() ?? "";
+    string status = device["Status"]?.ToString() ?? "";
+    string deviceClass = device["ClassGuid"]?.ToString() ?? "";
+
+    // Crear objeto de dispositivo
+    DeviceInfo deviceInfo = new DeviceInfo
+    {
+        DeviceId = deviceId,
+        Name = name,
+        Description = description,
+        Manufacturer = manufacturer,
+        Status = status,
+        ClassGuid = deviceClass,
+        // Clasificar dispositivo según su tipo
+        TrustLevel = ClassifyDevice(deviceId, name, description, manufacturer)
+    };
+
+    devices.Add(deviceInfo);
+                        }
+                        catch
+                        {
+    // Ignorar errores individuales de dispositivos
 }
+                    }
+                }
+
+                // Obtener monitores usando el detector especializado
+                List<MonitorInfo> monitors = _monitorDetector.DetectMonitors();
+
+// Convertir los monitores a DeviceInfo y añadirlos a la lista
+foreach (var monitor in monitors)
+{
+    Console.WriteLine($"Monitor detectado: {monitor.GetFriendlyName()} - {monitor.GetResolutionString()}");
+    DeviceInfo monitorDevice = monitor.ToDeviceInfo();
+
+    // Añadir solo si no existe ya un dispositivo con el mismo ID
+    if (!devices.Exists(d => d.DeviceId == monitorDevice.DeviceId))
+    {
+        devices.Add(monitorDevice);
+    }
+}
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error obteniendo dispositivos: {ex.Message}");
+            }
+
+            return devices;
+        }
+
+        private string ClassifyDevice(string deviceId, string name, string description, string manufacturer)
+{
+    // Lista de palabras clave para dispositivos externos/sospechosos
+    string[] externalKeywords = new string[]
+    {
+                "usb", "flash", "removable", "portable", "external", "card reader",
+                "memory stick", "sandisk", "kingston", "cruzer"
+    };
+
+    // Comprobación para dispositivos externos
+    string lowerDeviceInfo = (deviceId + " " + name + " " + description + " " + manufacturer).ToLower();
+
+    foreach (string keyword in externalKeywords)
+    {
+        if (lowerDeviceInfo.Contains(keyword))
+        {
+            return Core.Config.Constants.DeviceTypes.External;
+        }
+    }
+
+    // Lista de fabricantes de confianza
+    string[] trustedManufacturers = new string[]
+    {
+                "microsoft", "intel", "amd", "nvidia", "realtek", "logitech", "dell",
+                "hp", "lenovo", "asus", "msi", "gigabyte", "corsair"
+    };
+
+    string

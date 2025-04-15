@@ -92,6 +92,7 @@
     <Compile Include="Core\Models\DriverInfo.cs" />
     <Compile Include="Core\Models\HardwareInfo.cs" />
     <Compile Include="Core\Models\MonitorData.cs" />
+    <Compile Include="Core\Models\MonitorInfo.cs" />
     <Compile Include="Core\Models\NetworkConnection.cs" />
     <Compile Include="Core\Models\Player.cs" />
     <Compile Include="Core\Models\ProcessInfo.cs" />
@@ -102,6 +103,7 @@
     <Compile Include="Core\Services\ScreenshotService.cs" />
     <Compile Include="Core\Services\WebSocketService.cs" />
     <Compile Include="DetectionEngine\DeviceMonitor.cs" />
+    <Compile Include="DetectionEngine\MonitorDetector.cs" />
     <Compile Include="DetectionEngine\ProcessMonitor.cs" />
     <Compile Include="UI\Windows\AlertWindow.xaml.cs">
       <DependentUpon>AlertWindow.xaml</DependentUpon>

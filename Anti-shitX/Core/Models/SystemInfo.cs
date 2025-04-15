@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace AntiCheatClient.Core.Models
 {
@@ -16,5 +17,8 @@ namespace AntiCheatClient.Core.Models
         public string LanguageSettings { get; set; }
         public string TimeZone { get; set; }
         public string FrameworkVersion { get; set; }
+
+        // Nueva propiedad para almacenar información detallada de los monitores
+        public List<object> MonitorsInfo { get; set; } = new List<object>();
     }
 }
